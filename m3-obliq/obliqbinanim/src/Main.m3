@@ -4,7 +4,7 @@
 (* Last modified on Mon Nov  1 10:02:54 1993 by luca *)
 
 MODULE Main;
-IMPORT ObliqOnline;
+IMPORT ObliqOnline, SynWr;
 
 (* ========= Add or remove imports here ========= *)
 IMPORT ObLibM3, ObLibM3Help; (* rd,wr,lex,fmt,pickle,process,thread *)
@@ -25,8 +25,8 @@ IMPORT ObLibAnim, ObLibAnimHelp; (* graph zeus *)
   END RegisterLibraries;
 
 BEGIN
-  ObliqOnline.Setup();
+  ObliqOnline.Setup(SynWr.out);
   RegisterLibraries();
-  ObliqOnline.Interact(ObliqOnline.New(Greetings));
+  ObliqOnline.Interact(ObliqOnline.New(SynWr.out, Greetings));
 END Main.
 
