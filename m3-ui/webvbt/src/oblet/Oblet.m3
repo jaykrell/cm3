@@ -89,7 +89,7 @@ PROCEDURE LoadOblet (                      info  : ObletInfo; page: Web.Page)
       env := ParseRd(parser, info.url, rd);
       TRY Rd.Close(rd) EXCEPT Rd.Failure => END;
       WITH obj = Obliq.Lookup("oblet", env) DO
-        TYPECASE Obliq.ObjectSelect(obj, "vbt") OF
+        TYPECASE Obliq.ObjectSelect(obj, "vbt", swr) OF
         | ObLibUI.ValVBT (node) => vbt := TranslateVBT.New(node.vbt);
         ELSE
           RAISE BadOblet
@@ -117,9 +117,9 @@ PROCEDURE ParseRd (p: ObliqParser.T; fullURL: TEXT; rd: Rd.T): Obliq.Env
     env: Obliq.Env;
   BEGIN
     WITH baseURL = Text.Sub (fullURL, 0, Text.FindCharR (fullURL, '/') + 1),
-         e0 = Obliq.EmptyEnv(),
-         e1 = Obliq.NewEnv ("FullURL", Obliq.NewText (fullURL), e0),
-         e2 = Obliq.NewEnv ("BaseURL", Obliq.NewText (baseURL), e1) DO
+         e0 = Obliq.EmptyEnv(SynWr.err),
+         e1 = Obliq.NewEnv (SynWr.err, "FullURL", Obliq.NewText (fullURL), e0),
+         e2 = Obliq.NewEnv (SynWr.err, "BaseURL", Obliq.NewText (baseURL), e1) DO
       env := e2;
     END;
 
@@ -147,7 +147,7 @@ PROCEDURE DoRunOblet (cl: ObletClosure): REFANY =
   (* The "run" method on the obliq object is called without VBT.mu locked. *)
   BEGIN
     TRY
-      EVAL Obliq.ObjectInvoke(cl.obj, "run", Obliq.Vals{})
+      EVAL Obliq.ObjectInvoke(cl.obj, "run", Obliq.Vals{}, cl.swr)
     EXCEPT
     | ObValue.Error (packet) =>
       Obliq.ReportError (cl.swr, packet);
@@ -159,7 +159,7 @@ PROCEDURE DoRunOblet (cl: ObletClosure): REFANY =
 
 BEGIN
   SynWr.Setup();
-  ObliqParser.PackageSetup();
+  ObliqParser.PackageSetup(SynWr.err);
   ObLibM3.PackageSetup();
   ObLibUI.PackageSetup();
   ObLibAnim.PackageSetup();

@@ -84,6 +84,7 @@ PROCEDURE EvalWeb(                    self  : PackageWeb;
                   <*UNUSED*>          arity : ObLib.OpArity; 
                              READONLY args  : ObValue.ArgArray; 
                   <*UNUSED*>          temp  : BOOLEAN; 
+                  <*UNUSED*>          swr   : SynWr.T;
                                       loc   : SynLocation.T): ObValue.Val 
   RAISES {ObValue.Error} =
   VAR 
@@ -185,6 +186,7 @@ TYPE
     hotLinkProc: ObValue.ValFun := NIL;
     isMapProc  : ObValue.ValFun := NIL;
     isIndexProc: ObValue.ValFun := NIL;
+    swr        : SynWr.T := NIL;
   OVERRIDES
     hotlink := Hotlink;
     ready   := Ready;
@@ -197,11 +199,12 @@ PROCEDURE Ready (self: MyWebVBT; remImages: CARDINAL) =
   VAR 
     args: ARRAY [1..2] OF ObValue.Val;
   BEGIN
+    IF self.swr = NIL THEN self.swr := SynWr.err END;
     args[1] := self.val;
     args[2] := Obliq.NewInt (remImages);
     TRY
       IF self.readyProc # NIL THEN
-        EVAL Obliq.Call (self.readyProc, args, self.loc);
+        EVAL Obliq.Call (self.readyProc, args, self.swr, self.loc);
       END;
     EXCEPT
     | ObValue.Error (packet) => 
@@ -224,11 +227,12 @@ PROCEDURE Hotlink (                    self: MyWebVBT;
   VAR 
     args: ARRAY [1..2] OF ObValue.Val;
   BEGIN
+    IF self.swr = NIL THEN self.swr := SynWr.err END;
     args[1] := self.val;
     args[2] := Obliq.NewText (link);
     TRY
       IF self.hotLinkProc # NIL THEN
-        EVAL Obliq.Call (self.hotLinkProc, args, self.loc);
+        EVAL Obliq.Call (self.hotLinkProc, args, self.swr, self.loc);
       END;
     EXCEPT
     | ObValue.Error (packet) => 
@@ -251,11 +255,12 @@ PROCEDURE IsMap(                    self: MyWebVBT;
   VAR 
     args: ARRAY [1..2] OF ObValue.Val;
   BEGIN
+    IF self.swr = NIL THEN self.swr := SynWr.err END;
     args[1] := self.val;
     args[2] := Obliq.NewText (link);
     TRY
       IF self.isMapProc # NIL THEN
-        EVAL Obliq.Call (self.isMapProc, args, self.loc);
+        EVAL Obliq.Call (self.isMapProc, args, self.swr, self.loc);
       END;
     EXCEPT
     | ObValue.Error (packet) => 
@@ -276,11 +281,12 @@ PROCEDURE IsIndex (self: MyWebVBT; typein: TEXT) =
     VAR 
     args: ARRAY [1..2] OF ObValue.Val;
   BEGIN
+    IF self.swr = NIL THEN self.swr := SynWr.err END;
     args[1] := self.val;
     args[2] := Obliq.NewText (typein);
     TRY
       IF self.isIndexProc # NIL THEN
-        EVAL Obliq.Call (self.isIndexProc, args, self.loc);
+        EVAL Obliq.Call (self.isIndexProc, args, self.swr, self.loc);
       END;
     EXCEPT
     | ObValue.Error (packet) => 
