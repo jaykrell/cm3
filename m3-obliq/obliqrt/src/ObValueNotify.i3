@@ -15,9 +15,9 @@
  * Update Count    : 11
  * 
  * $Source: /opt/cvs/cm3/m3-obliq/obliqrt/src/ObValueNotify.i3,v $
- * $Date: 2001-01-24 21:52:39 $
+ * $Date: 2001-12-02 14:34:48 $
  * $Author: wagner $
- * $Revision: 1.1.1.1 $
+ * $Revision: 1.1.1.1.2.1 $
  * 
  * $Log: not supported by cvs2svn $
  * Revision 1.1  1996/11/28 15:48:13  bm
