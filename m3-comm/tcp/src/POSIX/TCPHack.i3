@@ -4,7 +4,6 @@
 
 INTERFACE TCPHack;
 
-<*EXTERNAL "TCPHack__RefetchError"*>
 PROCEDURE RefetchError(fd: INTEGER): BOOLEAN;
   (* Awful hack to retrieve a meaningful error from a TCP accept
      socket.  Only works on Ultrix and OSF.  Leaves result
