@@ -7,6 +7,7 @@
 INTERFACE IP;
 
 IMPORT Atom, AtomList;
+(*FROM IPInternal IMPORT EndpointInfo;*)
 
 (* This interface defines the addresses used for communicating
    with the internet protocol family.
@@ -38,9 +39,11 @@ EXCEPTION Error(EC);
 (* An IP implementation (or a layered IP protocolimplementation), can raise
    "Error" with error lists including, but not limited to, the following
    atoms: *)
-
-VAR
-  LookupFailure, Unreachable, PortBusy, NoResources: Atom.T;
+(*TODO Dynamic linking to data does not work on Win32.*)
+VAR LookupFailure: Atom.T;
+VAR Unreachable: Atom.T;
+VAR PortBusy: Atom.T;
+VAR NoResources: Atom.T;
 
 (* "LookupFailure" indicates that a call to "GetHostByName" could
    not determine whether the argument name exists.
@@ -75,9 +78,11 @@ TYPE
   EP = OBJECT
     port : Port := NullPort;
   END;
+
   Endpoint4 = EP OBJECT
    adr : Address4 := NullAddress4;
   END;
+
   Endpoint16 = EP OBJECT
    adr : Address16 := NullAddress16;
   END;

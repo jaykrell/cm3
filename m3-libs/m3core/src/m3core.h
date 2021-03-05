@@ -24,6 +24,15 @@
 #pragma warning(disable:4668) /* #if of undefined symbol */
 #endif
 
+#ifdef _WIN32
+#include "ws2tcpip.h"
+#include "wspiapi.h"
+#endif
+
+typedef int BOOL;
+#define TRUE 1
+#define FALSE 0
+
 #if __GNUC__ >= 4 && !defined(__osf__) && !defined(__CYGWIN__)
 #define M3_HAS_VISIBILITY 1
 #else
@@ -169,6 +178,11 @@
 
 #if !defined(_MSC_VER) && !defined(__cdecl)
 #define __cdecl /* nothing */
+#endif
+
+#ifdef _MSC_VER
+#define __try /* nothing */
+#define __finally /* nothing */
 #endif
 
 #ifdef __cplusplus
@@ -369,12 +383,30 @@ typedef void* ADDRESS;
 #else
 typedef char* ADDRESS;
 #endif
-typedef ADDRESS TEXT;
-typedef ADDRESS MUTEX;
+typedef ADDRESS TEXT; /* TODO some struct? */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct M3MutexFunctions_t;
+typedef struct M3MutexFunctions_t M3MutexFunctions_t;
+
+struct M3Mutex_t;
+typedef struct M3Mutex_t M3Mutex_t;
+
+typedef M3Mutex_t *MUTEX;
+
+struct M3MutexFunctions_t
+{
+    void (*Acquire)(M3Mutex_t*);
+    void (*Release)(M3Mutex_t*);
+};
+
+struct M3Mutex_t
+{
+    const M3MutexFunctions_t* functions;
+};
 
 /* WORD_T/INTEGER are always exactly the same size as a pointer.
  * VMS sometimes has 32bit size_t/ptrdiff_t but 64bit pointers.
@@ -518,7 +550,6 @@ typedef struct _m3_hostent_t m3_hostent_t;
 m3_hostent_t* __cdecl Unetdb__gethostbyname(const char* name, m3_hostent_t* m3);
 m3_hostent_t* __cdecl Unetdb__gethostbyaddr(const char* addr, int len, int type, m3_hostent_t* m3);
 
-
 struct _m3_group_t;
 typedef struct _m3_group_t m3_group_t;
 
@@ -557,6 +588,10 @@ M3toC__CopyStoT(const char*);
 TEXT
 __cdecl
 M3toC__StoT(const char*);
+
+char*
+__cdecl
+M3toC__CopyTtoS(TEXT);
 
 /* This MUST match DatePosix.i3.T.
  * The fields are ordered by size and alphabetically.
@@ -599,6 +634,10 @@ M3_DLL_LOCAL
 int
 __cdecl
 ThreadInternal__StackGrowsDown (void);
+
+void
+__cdecl
+Process__RegisterExitor(void (__cdecl*)(void));
 
 #ifdef __cplusplus
 } /* extern "C" */
