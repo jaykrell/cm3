@@ -45,8 +45,7 @@ Usocket__plen_out(m3_socklen_t* plen, socklen_t len)
 #define ASSERT_PLEN_IN Usocket__assert_plen_in(plen);
 #define PLEN_OUT Usocket__plen_out(plen, len);
 
-#define ASSERT_LEN \
-    assert(len <= (1UL << 30));
+#define ASSERT_LEN assert(len <= (1UL << 30));
 
 M3_DLL_LOCAL void __cdecl
 Usocket__Assertions(void)
