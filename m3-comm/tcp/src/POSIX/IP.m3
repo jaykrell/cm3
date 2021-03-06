@@ -95,21 +95,17 @@ CONST
   MaxService = 32;
 
 TYPE
-  RefAddrInfo = UNTRACED REF Unetdb.addrinfo_t;
-  RefSockaddr4 = UNTRACED REF Uin.struct_sockaddr_in;
-  RefSockaddr16 = UNTRACED REF Uin.struct_sockaddr_in6;
+  Sockaddr4 = Uin.struct_sockaddr_in;
+  Sockaddr16 = Uin.struct_sockaddr_in6;
 
 (* Return the first usable address - there could be many - and more likely an IP4 address. *)
 PROCEDURE GetAddrInfo(READONLY name,service : TEXT) : EP RAISES {Error} =
   VAR
     node: Ctypes.char_star := NIL;
     port : Ctypes.char_star := NIL;
-    res : RefAddrInfo := NIL;
-    free : RefAddrInfo := NIL;
-    sa4 : RefSockaddr4 := NIL;
-    sa16 : RefSockaddr16 := NIL;
-    a4 : Address4;
-    a16 : Address16;
+    native_res : NativeAddressInfo := NIL;
+    res: AddressInfo;
+    first : NativeAddressInfo := NIL;
     err : Ctypes.int := 0;
     ep: EP := NIL;
   BEGIN
@@ -119,25 +115,24 @@ PROCEDURE GetAddrInfo(READONLY name,service : TEXT) : EP RAISES {Error} =
     IF name # NIL THEN node := M3toC.CopyTtoS(name); END;
     IF service # NIL THEN port := M3toC.CopyTtoS(service); END;
 
-    err := Unetdb.getaddrinfo(node,port,NIL,res);
+    err := Unetdb.getaddrinfo(node,port,first);
     IF err # 0 THEN
       IPError.Raise (LookupFailure, err);
     ELSE
-      free := res;
-      WHILE ep = NIL AND res # NIL DO
-        IF res.ai_family = Usocket.AF_INET THEN
-          sa4 := LOOPHOLE(res.ai_addr,RefSockaddr4);
-          a4 := LOOPHOLE(sa4.sin_addr,Address4);
-          ep := NEW(Endpoint4, adr := a4, port := sa4.sin_port);
-        ELSIF res.ai_family = Usocket.AF_INET6 THEN
-          sa16 := LOOPHOLE(res.ai_addr, RefSockaddr16);
-          a16 := LOOPHOLE(sa16.sin6_addr, Address16);
-          ep := NEW(Endpoint16, adr := a16, port := sa16.sin6_port);
+      res_native := first;
+      WHILE ep = NIL AND res_native # NIL DO
+        ConvertAddressInfo(res_native, res);
+        IF res.family = Usocket.AF_INET THEN
+          ep := NEW(Endpoint4, adr := res.address4, port := res.port);
+        ELSIF res.family = Usocket.AF_INET6 THEN
+          ep := NEW(Endpoint16, adr := res.address6, port := res.port);
         END;
-        res := res.ai_next;
+        res_native := res.next;
       END;
-      Unetdb.freeaddrinfo(free);
+      Unetdb.freeaddrinfo(first);
     END;
+    M3toC.FreeCopiedS(node);
+    M3toC.FreeCopiedS(port);
     RETURN ep;
 END GetAddrInfo;
 
@@ -145,8 +140,8 @@ PROCEDURE GetNameInfo(ep : EP; VAR (*out*) host,service : TEXT) RAISES {Error} =
   VAR
     ai_addr : UNTRACED REF Uin.struct_sockaddr;
     ai_addrlen : Ctypes.int;
-    refSA4 : RefSockaddr4;
-    refSA16 : RefSockaddr16;
+    SA4 : Sockaddr4;
+    SA16 : Sockaddr16;
     hostBuf,serviceBuf : REF ARRAY OF CHAR;
     h,s : ADDRESS;
     sLen : Ctypes.int;
@@ -164,19 +159,17 @@ PROCEDURE GetNameInfo(ep : EP; VAR (*out*) host,service : TEXT) RAISES {Error} =
 
     TYPECASE ep OF
     | Endpoint4(xx) =>
-       refSA4 := NEW(RefSockaddr4);
-       refSA4.sin_family := Usocket.AF_INET;
-       refSA4.sin_port := ep.port;
-       refSA4.sin_addr :=  LOOPHOLE(xx.adr, Uin.struct_in_addr);
-       ai_addr := LOOPHOLE(refSA4, UNTRACED REF Uin.struct_sockaddr);
-       ai_addrlen := BYTESIZE(Uin.struct_sockaddr_in);
+       SA4.sin_family := Usocket.AF_INET;
+       SA4.sin_port := ep.port;
+       SA4.sin_addr :=  LOOPHOLE(xx.adr, Uin.struct_in_addr);
+       ai_addr := LOOPHOLE(ADR(SA4), UNTRACED REF Uin.struct_sockaddr);
+       ai_addrlen := BYTESIZE(SA4);
     | Endpoint16(xx) =>
-       refSA16 := NEW(RefSockaddr16);
-       refSA16.sin6_family := Usocket.AF_INET6;
-       refSA16.sin6_port := ep.port;
-       refSA16.sin6_addr :=  LOOPHOLE(xx.adr, Uin.struct_in6_addr);
-       ai_addr := LOOPHOLE(refSA16,UNTRACED REF Uin.struct_sockaddr);
-       ai_addrlen := BYTESIZE(Uin.struct_sockaddr_in6);
+       SA16.sin6_family := Usocket.AF_INET6;
+       SA16.sin6_port := ep.port;
+       SA16.sin6_addr :=  LOOPHOLE(xx.adr, Uin.struct_in6_addr);
+       ai_addr := LOOPHOLE(ADR(SA16),UNTRACED REF Uin.struct_sockaddr);
+       ai_addrlen := BYTESIZE(SA16);
     ELSE
         IPError.Raise (LookupFailure);
     END;

@@ -71,13 +71,14 @@ TYPE
 (* The type "Address" is an IP address in network byte order.
    The type "Port" is an IP port number in host byte order.
 *)
-
   EP = OBJECT
     port : Port := NullPort;
   END;
+
   Endpoint4 = EP OBJECT
    adr : Address4 := NullAddress4;
   END;
+
   Endpoint16 = EP OBJECT
    adr : Address16 := NullAddress16;
   END;
