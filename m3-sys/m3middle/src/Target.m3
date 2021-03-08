@@ -112,10 +112,13 @@ PROCEDURE Init (system: TEXT; in_OS_name: TEXT; backend_mode: M3BackendMode_t): 
       Little_endian := FALSE;
     END;
 
-    (* x86 and AMD64 allow unaligned loads/stores *)
-
-    IF IsX86() OR IsAMD64() THEN
-      Allow_packed_byte_aligned := TRUE;
+    (* x86 and AMD64 allow unaligned loads/stores but
+     * keep C output for all targets converged
+     *)
+    IF backend_mode # M3BackendMode_t.C THEN
+      IF IsX86() OR IsAMD64() THEN
+        Allow_packed_byte_aligned := TRUE;
+      END;
     END;
 
     InitCallingConventions (backend_mode,
