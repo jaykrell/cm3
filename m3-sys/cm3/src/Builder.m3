@@ -106,9 +106,14 @@ TYPE
     pending_impls : M3Unit.TList;       (* deferred implementation modules *)
     main          : M3ID.T;             (* "Main" *)
     m3env         : Env;                (* the compiler's environment closure *)
-    target        : TEXT;               (* target machine *)
-    (* target_os is misused; needs work *)
-    target_os     := M3Path.OSKind.Unix;(* target os *)
+(*
+    target        : TEXT;                * target machine Arch + OS *
+    target_arch   : Arch;                * x86 AMD64 ARM Alpha MIPS SPARC RISCV I386 VAX etc. not very meaningful *
+    target_endian : Endian;              * big or little *
+    target_os     : OS;                  * Linux NT Darwin FreeBSD OpenBSD NetBSD Solaris AIX Irix VMS HPUX, etc. *
+    target_wordsize : INTEGER;          (* 32 or 64 *)
+*)
+    target_oskind := M3Path.OSKind.Unix;(* target oskind Unix or Win32 *)
     m3backend_mode: M3BackendMode_t;    (* tells how to turn M3CG -> object *)
     m3backend     : ConfigProc;         (* translate M3CG -> ASM or OBJ *)
     m3llvm        : ConfigProc;         (* translate M3CG -> LLVM bitcode *) 
@@ -168,7 +173,7 @@ PROCEDURE SetupNamingConventionsInternal (VAR s : State; mach : Quake.Machine) =
 
        The host has always been probed correctly, and the Quake variables were
        not checked at the right time. Host and target naming conventions rarely
-       varied.  Current uses of target_os need attention. *)
+       varied.  Current uses of target_oskind need attention. *)
     
     value := GetDefn (s, "NAMING_CONVENTIONS");
     IF value # NIL THEN
@@ -177,9 +182,9 @@ PROCEDURE SetupNamingConventionsInternal (VAR s : State; mach : Quake.Machine) =
 
     value := GetDefn (s, "TARGET_NAMING");
     IF value # NIL THEN
-      WITH target_os = ConvertNamingConventionStringToEnum (s, value) DO
-        s.target_os := target_os;
-        M3Path.SetTargetOS (target_os);
+      WITH target_oskind = ConvertNamingConventionStringToEnum (s, value) DO
+        s.target_oskind := target_oskind;
+        M3Path.SetTargetOS (target_oskind);
       END;
     END;
 
@@ -268,6 +273,11 @@ PROCEDURE CompileUnits (main     : TEXT;
   VAR
     s := NEW (State);  nm := M3Path.Parse (main);
     value : QValue.Binding;
+    string_arch    : TEXT := NIL;
+    string_endian  : TEXT := NIL;
+    string_target  : TEXT := NIL;
+    string_targetos: TEXT := NIL;
+    string_wordsize: TEXT := NIL;
   BEGIN
     DumpUnits (units);
     ETimer.ResetAll ();
@@ -287,8 +297,6 @@ PROCEDURE CompileUnits (main     : TEXT;
     s.m3env         := NEW (Env);
     s.m3env.globals := s;
 
-    s.target := GetConfigItem (s, "TARGET");
-
     value := GetDefn (s, "M3_BACKEND_MODE");
     IF value = NIL THEN
       value := GetDefn (s, "BACKEND_MODE");
@@ -300,13 +308,172 @@ PROCEDURE CompileUnits (main     : TEXT;
 
     value := GetDefn (s, "TARGET_NAMING");
     IF value # NIL THEN
-      WITH target_os = ConvertNamingConventionStringToEnum (s, value) DO
-        s.target_os := target_os;
-        M3Path.SetTargetOS (target_os);
+      WITH target_oskind = ConvertNamingConventionStringToEnum (s, value) DO
+        s.target_oskind := target_oskind;
+        M3Path.SetTargetOS (target_oskind);
       END;
     END;
 
-    IF NOT Target.Init (s.target, GetConfigItem (s, "OS_TYPE", "POSIX"), s.m3backend_mode) THEN
+    string_arch     := TextUtils.Lower (GetConfigText t(s, "TARGET_ARCH"));
+    string_endian   := TextUtils.Lower (GetConfigText (s, "TARGET_ENDIAN"));
+    string_target   := TextUtils.Lower (GetConfigText (s, "TARGET"));
+    string_targetos := TextUtils.Lower (GetConfigText (s, "TARGET_OS"));
+    string_wordsize := TextUtils.Lower (GetConfigText (s, "WORD_SIZE"));
+
+    (* Translate historical names. *)
+
+    IF string_target # NIL THEN
+      IF Text.Equal (string_target, "nt386") THEN
+        string_target := "i386_nt"
+        string_arch := "i386";
+        string_endian := "little";
+        string_wordsize := "32";
+        string_targetos := "nt";
+      ELSIF Text.Equal (string_target, "linuxlibc6") THEN
+        string_target := "i386_linux";
+        string_arch := "i386";
+        string_endian := "little";
+        string_wordsize := "32";
+        string_targetos := "linux";
+      ELSIF Text.Equal (string_target, "freebsd3") OR
+            Text.Equal (string_target, "freebsd4") THEN
+        string_target := "i386_freebsd";
+        string_arch := "i386";
+        string_endian := "little";
+        string_wordsize := "32";
+        string_targetos := "freebsd";
+      ELSIF Text.Equal (string_target, "solsun") OR
+            Text.Equal (string_target, "solgnu") THEN
+        string_target := "sparc32_solaris";
+        string_arch := "sparc32";
+        string_endian := "big";
+        string_wordsize := "32";
+        string_targetos := "solaris";
+      END
+    END;
+
+    IF string_wordsize # NIL THEN
+      IF Text.Contains(string_wordsize, "32") THEN
+        s.target_wordsize := 32;
+      ELSIF Text.Contains(string_wordsize, "64") THEN
+        s.target_wordsize := 64;
+      ELSE
+        ConfigErr (s, "WORD_SIZE". "should be 32 or 64");
+      END;
+    END
+
+    IF string_endian # NIL THEN
+      IF Text.Equal (string_endian, "big") OR Text.Equal (string_endian, "be") THEN
+        s.endian := BigEndian;
+      ELSIF Text.Equal (string_endian, "little") OR Text.Equal (string_endian, "el") THEN
+        s.endian := LittleEndian;
+      ELSE
+        ConfigErr (s, "TARGET_ENDIAN". "misconfigured");
+      END;
+    END
+
+    (* Many architectures have "32" or "64" in their name.
+     * Else default to "32", except Alpha. Except TODO alpha_nt (config can be explicit)
+     *)
+    IF string_arch # NIL THEN
+      IF TextUtils.Contains(string_arch, "32") OR
+         Text.Equal (string_arch, "s390") THEN
+        IF s.wordsize = 64 THEN
+            ConfigErr (s, "WORD_SIZE", "mismatch with arch");
+        END;
+        s.wordsize := 32;
+      ELSIF string_arch # NIL AND (TextUtils.Contains(string_arch, "64") 
+                                OR TextUtils.Contains(string_arch, "alpha")
+                                OR Text.Equal (string_arch, "s390x")) THEN
+        IF s.wordsize = 32 THEN
+          ConfigErr (s, "WORD_SIZE", "mismatch with arch");
+        END;
+        s.wordsize := 64;
+      ELSIF s.wordsize = 0 THEN
+        s.wordsize := 32;
+      END;
+    END
+
+    (* Many architectures end in el or be, or else have a known endian.
+     * "el" includes ppc64el and mipsel and armel.
+     *)
+    IF s.endian = NoEndian AND string_arch # NIL THEN
+      IF TextUtils.Ends (string_arch, "el") THEN
+        s.endian := LittleEndian;
+      ELSIF TextUtils.Ends (string_arch, "be") OR 
+         TextUtils.Starts (string_arch, "hppa") OR
+         TextUtils.Starts (string_arch, "pa") OR
+         TextUtils.Starts (string_arch, "m68k") OR
+         TextUtils.Starts (string_arch, "mips") OR
+         TextUtils.Starts (string_arch, "sparc") OR
+         TextUtils.Starts (string_arch, "ppc") OR
+         TextUtils.Starts (string_arch, "powerpc") OR
+         TextUtils.Starts (string_arch, "s390")
+      THEN
+        s.endian := BigEndian;
+      ELSIF TextUtils.Ends (string_arch, "86") OR (* I386 x86 etc *)
+         TextUtils.Starts (string_arch, "amd") OR (* amd64 *)
+         TextUtils.Starts (string_arch, "intel") OR
+         TextUtils.Starts (string_arch, "arm") OR
+         TextUtils.Starts (string_arch, "alpha") OR
+         TextUtils.Starts (string_arch, "vax") OR
+         TextUtils.Starts (string_arch, "ia") (* ia32 ia64 *)
+        s.endian := LittleEndian;
+    END;
+
+    IF s.wordsize = 64 THEN
+      Target.Init64 ();
+    END;
+
+    (* x86 and AMD64 allow unaligned loads/stores but converge C *)
+
+    IF s.m3backend_mode # M3BackendMode_t.C THEN
+      IF TextUtils.Starts (string_arch, "x86") OR TextUtils.Starts (string_arch, "amd") THEN
+        Target.Allow_packed_byte_aligned := TRUE;
+      END;
+    END;
+
+    (*
+    value := TextUtils.Lower (GetConfigText (s, "TARGET_OS"));
+    IF value # NIL THEN
+      IF Text.Equal (value, "linux") THEN
+        s.target_os = OS.Linux;
+      ELSIF Text.Equal (value, "nt") THEN
+        s.target_os = OS.NT;
+      ELSIF Text.Equal (value, "darwin") THEN
+        s.target_os = OS.Darwin;
+      ELSIF Text.Equal (value, "solaris") THEN
+        s.target_os = OS.Solaris;
+      ELSIF Text.Equal (value, "aix") THEN
+        s.target_os = OS.AIX;
+      ELSIF Text.Equal (value, "irix") THEN
+        s.target_os = OS.Irix;
+      ELSIF Text.Equal (value, "hpux") THEN
+        s.target_os = OS.Hpux;
+      ELSIF Text.Equal (value, "freebsd") THEN
+        s.target_os = OS.FreeBSD;
+      ELSIF Text.Equal (value, "netbsd") THEN
+        s.target_os = OS.NetBSD;
+      ELSIF Text.Equal (value, "openbsd") THEN
+        s.target_os = OS.OpenBSD;
+      ELSIF Text.Equal (value, "vms") OR Text.Equal (value, "openvms") THEN
+        s.target_os = OS.VMS;
+      ELSE
+          ConfigErr (s, "TARGET_OS", ""); * Does this matter? *
+      END;
+   END;
+   *)
+
+    IF value # NIL THEN
+      WITH target_oskind = ConvertNamingConventionStringToEnum (s, value) DO
+        s.target_oskind := target_oskind;
+        M3Path.SetTargetOS (target_oskind);
+      END;
+    END;
+
+    IF NOT Target.Init (string_target,
+                        GetConfigItem (s, "OS_TYPE", "POSIX"), (* Posix or Win32 => ThisOS *)
+                        s.m3backend_mode) THEN
       Msg.FatalError (NIL, "unrecognized target machine: TARGET = ", s.target);
     END;
 
@@ -2497,9 +2664,9 @@ PROCEDURE GenerateCMain (s: State;  Main_O: TEXT) =
     Msg.Commands ("generate ", init_code);
     wr := Utils.OpenWriter (init_code, fatal := TRUE);
     MxGen.GenerateMain (s.link_base, wr, NIL, Msg.level >= Msg.Level.Debug,
-                        (* Use of target_os needs work:
+                        (* Use of target_oskind needs work:
                            NT386GNU can generate Windowed apps. *)
-                        s.gui AND (s.target_os = M3Path.OSKind.Win32),
+                        s.gui AND (s.target_oskind = M3Path.OSKind.Win32),
                         s.lazy_init);
     Utils.CloseWriter (wr, init_code);
     ETimer.Pop ();
@@ -2816,8 +2983,8 @@ PROCEDURE WriteProgramDesc (s: State;  desc_file, main_o: TEXT) =
 
   PROCEDURE Emit (wr: Wr.T) RAISES {Wr.Failure, Thread.Alerted} =
     BEGIN
-      (* Use of target_os needs work. *)
-      IF (s.target_os = M3Path.OSKind.Win32) THEN
+      (* Use of target_oskind needs work. *)
+      IF (s.target_oskind = M3Path.OSKind.Win32) THEN
         Wr.PutText (wr, "-out:");
         Wr.PutText (wr, s.result_name);
         Wr.PutText (wr, ".exe");
@@ -2899,9 +3066,9 @@ PROCEDURE BuildBootProgram (s: State) =
   PROCEDURE EmitMain (wr: Wr.T) RAISES {} =
     BEGIN
       MxGen.GenerateMain (s.link_base, wr, NIL, Msg.level >=Msg.Level.Debug,
-                          (* Use of target_os needs work:
+                          (* Use of target_oskind needs work:
                              NT386GNU can generate Windowed apps. *)
-                          s.gui AND (s.target_os = M3Path.OSKind.Win32),
+                          s.gui AND (s.target_oskind = M3Path.OSKind.Win32),
                           s.lazy_init);
     END EmitMain;
 
@@ -3018,7 +3185,7 @@ PROCEDURE BuildLibrary (s: State;  shared: BOOLEAN) =
     Msg.Debug ("building the library...", Wr.EOL);
     Utils.Remove (lib_file);
 
-    IF (s.target_os = M3Path.OSKind.Win32) THEN
+    IF (s.target_oskind = M3Path.OSKind.Win32) THEN
       GenLibDef (name.base);
     END;
 

@@ -21,33 +21,16 @@ PROCEDURE Init64 () =
     Address.cg_type := CGType.Addr;
   END Init64;
 
-PROCEDURE IsX86(): BOOLEAN =
-  BEGIN
-    IF TextUtils.StartsWith(System_name, "I") AND
-          (TextUtils.StartsWith(System_name, "I386_")
-        OR TextUtils.StartsWith(System_name, "I486_")
-        OR TextUtils.StartsWith(System_name, "I586_")
-        OR TextUtils.StartsWith(System_name, "I686_")) THEN
-      RETURN TRUE;
-    END;
-    CASE System OF
-    | Systems.FreeBSD4, Systems.NT386, Systems.LINUXLIBC6 => RETURN TRUE;
-    ELSE RETURN FALSE;
-    END;
-  END IsX86;
-
-PROCEDURE IsAMD64(): BOOLEAN =
-  BEGIN
-    RETURN TextUtils.StartsWith(System_name, "AMD64_");
-  END IsAMD64;
-
-PROCEDURE Init (system: TEXT; in_OS_name: TEXT; backend_mode: M3BackendMode_t): BOOLEAN =
+PROCEDURE Init (system: TEXT; backend_mode: M3BackendMode_t): BOOLEAN =
   VAR sys := 0;  max_align := 64;
   BEGIN
     (* lookup the system -- linear search *)
     IF (system = NIL) THEN RETURN FALSE END;
     WHILE NOT Text.Equal (system, SystemNames[sys]) DO
-      INC (sys);  IF (sys >= NUMBER (SystemNames)) THEN RETURN FALSE END;
+      INC (sys);
+      IF (sys >= NUMBER (SystemNames)) THEN
+        EXIT;
+      END;
     END;
     System := VAL(sys, Systems);
     System_name := SystemNames[sys];
@@ -59,9 +42,6 @@ PROCEDURE Init (system: TEXT; in_OS_name: TEXT; backend_mode: M3BackendMode_t): 
     Atomic_lock_free :=
         ARRAY [CGType.Word8..CGType.Addr] OF BOOLEAN { TRUE, .. };
     (* this is overly optimistic... *)
-
-    Allow_packed_byte_aligned := FALSE;
-    Little_endian             := TRUE;
 
     IF backend_mode = M3BackendMode_t.C THEN
       Setjmp := "m3_setjmp";
@@ -90,42 +70,12 @@ PROCEDURE Init (system: TEXT; in_OS_name: TEXT; backend_mode: M3BackendMode_t): 
 
     Has_stack_walker          := FALSE;
 
-    (* add the system-specific customization *)
-
-    (* 64bit *)
-
-    IF TextUtils.StartsWith(system, "ALPHA_")       (* But not ALPHA32_. *)
-        OR TextUtils.Contains(system, "64") THEN
-      Init64();
-    END;
-
-    (* big endian *)
-
-    IF TextUtils.StartsWith(system, "PA")
-        OR (TextUtils.StartsWith(system, "MIPS")
-          AND NOT TextUtils.StartsWith(system, "MIPSEL")
-          AND NOT TextUtils.StartsWith(system, "MIPS32EL")
-          AND NOT TextUtils.StartsWith(system, "MIPS64EL"))
-        OR TextUtils.StartsWith(system, "PPC")  (* ambiguous *)
-        OR TextUtils.StartsWith(system, "SPARC")
-        OR TextUtils.StartsWith(system, "SOL") THEN
-      Little_endian := FALSE;
-    END;
-
-    (* x86 and AMD64 allow unaligned loads/stores but converge C *)
-    IF backend_mode # M3BackendMode_t.C THEN
-      IF IsX86() OR IsAMD64() THEN
-        Allow_packed_byte_aligned := TRUE;
-      END;
-    END;
-
     InitCallingConventions (backend_mode,
                             System IN SET OF Systems{Systems.I386_INTERIX,
                                                      Systems.NT386,
                                                      Systems.I386_NT,
                                                      Systems.I386_CYGWIN,
                                                      Systems.I386_MINGW});
-
     (* check the "bytes" and "pack" fields *)
     CheckI (Address, max_align);
     CheckI (Integer, max_align);

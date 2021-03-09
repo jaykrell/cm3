@@ -24,126 +24,36 @@ INTERFACE Target;
 IMPORT TInt, TWord;
 
 TYPE
+  (* This used to list many targets. Now it is just
+   * targets with multiple calling conventions.
+   *)
   Systems = {
-    ALPHA32_VMS,
-    ALPHA64_VMS,
-    ALPHA_LINUX,
-    ALPHA_OPENBSD,
-    ALPHA_OSF,
-    AMD64_DARWIN,
-    AMD64_FREEBSD,
-    AMD64_LINUX,
-    AMD64_NETBSD,
-    AMD64_OPENBSD,
-    AMD64_SOLARIS,
-    ARM_DARWIN,
-    ARM_LINUX,    (* little endian, v6, hard float, vfp *)
-    ARMEL_LINUX,  (* same thing *)
-    FreeBSD4,
+    Undefined,
     I386_CYGWIN,
-    I386_DARWIN,
-    I386_FREEBSD,
     I386_INTERIX,
     I386_LINUX,
     I386_MINGW,
-    I386_NETBSD,
     I386_NT,
-    I386_OPENBSD,
-    I386_SOLARIS,
-    IA64_FREEBSD,
-    IA64_HPUX,
-    IA64_LINUX,
-    IA64_NETBSD,
-    IA64_NT,
-    IA64_OPENBSD,
-    IA64_VMS,
-    LINUXLIBC6,
-    MIPS64_OPENBSD, (* e.g. SGI *)
-    MIPS64EL_OPENBSD, (* e.g. Loongson *)
-    NT386,
-    PA32_HPUX,
-    PA64_HPUX,
-    PPC32_OPENBSD,
-    PPC64_DARWIN,
-    PPC_DARWIN,
-    PPC_LINUX,
-    SOLgnu,
-    SOLsun,
-    SPARC32_LINUX,
-    SPARC32_SOLARIS,
-    SPARC64_LINUX,
-    SPARC64_OPENBSD,
-    SPARC64_SOLARIS,
-    AMD64_NT,
-    ARM64_DARWIN,
-    ARM64_LINUX,
-    ARM64_NT,
-    RISCV64_LINUX,
-    Undefined
+    Other,
   };
 
 CONST
+  (* This used to list many targets. Now it is just
+   * targets with multiple calling conventions.
+   *)
   SystemNames = ARRAY OF TEXT {
-    "ALPHA32_VMS",
-    "ALPHA64_VMS",
-    "ALPHA_LINUX",
-    "ALPHA_OPENBSD",
-    "ALPHA_OSF",
-    "AMD64_DARWIN",
-    "AMD64_FREEBSD",
-    "AMD64_LINUX",
-    "AMD64_NETBSD",
-    "AMD64_OPENBSD",
-    "AMD64_SOLARIS",
-    "ARM_DARWIN",
-    "ARM_LINUX",    (* little endian, v6, hard float, vfp *)
-    "ARMEL_LINUX",  (* same thing *)
-    "FreeBSD4",
+    "",
     "I386_CYGWIN",
-    "I386_DARWIN",
-    "I386_FREEBSD",
     "I386_INTERIX",
-    "I386_LINUX",
     "I386_MINGW",
-    "I386_NETBSD",
     "I386_NT",
-    "I386_OPENBSD",
-    "I386_SOLARIS",
-    "IA64_FREEBSD",
-    "IA64_HPUX",
-    "IA64_LINUX",
-    "IA64_NETBSD",
-    "IA64_NT",
-    "IA64_OPENBSD",
-    "IA64_VMS",
-    "LINUXLIBC6",
-    "MIPS64_OPENBSD",
-    "MIPS64EL_OPENBSD",
-    "NT386",
-    "PA32_HPUX",
-    "PA64_HPUX",
-    "PPC32_OPENBSD",
-    "PPC64_DARWIN",
-    "PPC_DARWIN",
-    "PPC_LINUX",
-    "SOLgnu",
-    "SOLsun",
-    "SPARC32_LINUX",
-    "SPARC32_SOLARIS",
-    "SPARC64_LINUX",
-    "SPARC64_OPENBSD",
-    "SPARC64_SOLARIS",
-    "AMD64_NT",
-    "ARM64_DARWIN",
-    "ARM64_LINUX",
-    "ARM64_NT",
-    "RISCV64_LINUX"
   };
 
-CONST
-  OSNames = ARRAY OF TEXT { "POSIX", "WIN32" };
-  EndianNames = ARRAY OF TEXT { "LITTLE", "BIG" }; 
-
+(*
+ * CONST
+ *  OSNames = ARRAY OF TEXT { "POSIX", "WIN32" };
+ *  EndianNames = ARRAY OF TEXT { "LITTLE", "BIG" }; 
+ *)
 TYPE
   M3BackendMode_t =
   {
@@ -246,9 +156,7 @@ CONST
 
 (*-------------------------------------------------------- initialization ---*)
 
-PROCEDURE Init 
-  (system: TEXT; osname := "POSIX"; backend_mode := M3BackendMode_t.ExternalAssembly)
-: BOOLEAN;
+PROCEDURE Init (system, osname: TEXT; backend_mode: M3BackendMode_t) : BOOLEAN;
 (* Initialize the variables of this interface to reflect the architecture
    of "system".  Returns TRUE iff the "system" was known and the initialization
    was successful.  *)
@@ -257,10 +165,7 @@ VAR (*CONST*)
   System: Systems := Systems.Undefined; (* initialized by "Init" *)
 
 VAR (*CONST*)
-  System_name: TEXT := NIL; (* initialized by "Init" *)
-
-VAR (*CONST*)
-  OS_name: TEXT := NIL; (* initialized by "Init" *)
+  OS_name: TEXT := NIL; (* initialized by "Init" to "POSIX" or "Win32" *)
 
 (*------------------------------------------ machine/code generator types ---*)
 
@@ -506,10 +411,10 @@ CONST
    *)
 
 VAR (*CONST*)
-  Little_endian : BOOLEAN;
+  Little_endian : BOOLEAN := TRUE;
   (* TRUE => byte[0] of an integer contains its least-significant bits *)
 
-  Allow_packed_byte_aligned: BOOLEAN;
+  Allow_packed_byte_aligned: BOOLEAN := FALSE;
   (* Allow the compiler to align scalar types on byte boundaries when packing.
      The target processor must support byte alignment of scalar store and
      loads. This does not remove the restriction that bitfields may not cross

@@ -493,9 +493,11 @@ PROCEDURE Tokenize(text : TEXT; sepchars := ASCII.Spaces;
 PROCEDURE Lower(t : TEXT) : TEXT =
   (* return a text where all alphas are in lower case *)
   VAR
-    len := Text.Length(t);
+    len :  INTEGER;
     res :  Text8.T;
   BEGIN
+    IF t = NIL THEN RETURN NIL; END;
+    len := Text.Length(t);
     res := Text8.Create(len);
     FOR i := 0 TO len - 1 DO
       res.contents[i] := ASCII.Lower[TextClass.GetChar(t, i)]
@@ -507,9 +509,11 @@ PROCEDURE Lower(t : TEXT) : TEXT =
 PROCEDURE Upper(t : TEXT) : TEXT =
   (* return a text where all alphas are in upper case *)
   VAR
-    len := Text.Length(t);
+    len :  INTEGER;
     res :  Text8.T;
   BEGIN
+    IF t = NIL THEN RETURN NIL; END;
+    len := Text.Length(t);
     res := Text8.Create(len);
     FOR i := 0 TO len - 1 DO
       res.contents[i] := ASCII.Upper[TextClass.GetChar(t, i)]
@@ -672,6 +676,12 @@ PROCEDURE Pos(READONLY s, t : TEXT; caseSensitive := TRUE) : INTEGER =
 PROCEDURE Contains(READONLY s, t : TEXT; caseSensitive := TRUE) : BOOLEAN =
   BEGIN
     RETURN Pos(s, t, caseSensitive) > -1;
+  END Contains;
+
+(*---------------------------------------------------------------------------*)
+PROCEDURE CIContains(READONLY s, t : TEXT; caseSensitive := TRUE) : BOOLEAN =
+  BEGIN
+    RETURN CIContains(s, t, FALSE);
   END Contains;
 
 (*---------------------------------------------------------------------------*)
