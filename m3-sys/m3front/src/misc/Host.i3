@@ -10,6 +10,7 @@
 INTERFACE Host;
 
 IMPORT M3ID, File, M3Compiler;
+FROM Target IMPORT M3BackendMode_t;
 
 VAR (* parameters to the top-level compile *)
   filename      : TEXT := NIL;
@@ -47,6 +48,8 @@ VAR (* misc. options *)
 
   clean_jumps : BOOLEAN := TRUE;
   (* must the stack be empty before every jump or call *)
+
+  m3backend_mode: M3BackendMode_t; (* tells how to turn M3CG -> object *)
 
 VAR (* runtime checks *)
   doNarrowChk : BOOLEAN := TRUE;

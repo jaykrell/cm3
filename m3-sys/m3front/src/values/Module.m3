@@ -13,8 +13,8 @@ IMPORT Variable, Type, Procedure, Ident, M3Buf, BlockStmt, Int;
 IMPORT Host, Token, Revelation, Coverage, Decl, Scanner, WebInfo;
 IMPORT ProcBody, Target, M3RT, Marker, File, Tracer, Wr;
 IMPORT WCharr, Jmpbufs;
-
 FROM Scanner IMPORT GetToken, Fail, Match, MatchID, cur;
+FROM Target IMPORT M3BackendMode_t;
 
 TYPE
   DataSeg = RECORD
@@ -423,8 +423,12 @@ PROCEDURE PushGeneric (t: T;  VAR rd: File.T): M3ID.T =
       RETURN M3ID.NoID;
     END;
 
-    (* build a synthetic file name & start reading *)
-    filename := old_filename & " => " & filename;
+    (* build a synthetic file name & start reading
+     *)
+    IF Host.m3backend_mode # M3BackendMode_t.C THEN
+      filename := old_filename & " => " & filename;
+    END;
+
     Scanner.Push (filename, rd, is_main := Scanner.in_main);
     t.genericFile := filename;
 

@@ -122,6 +122,7 @@ T = M3CG_DoNothing.T BRANDED "M3C.T" OBJECT
         report_fault: TEXT := NIL; (* based on M3x86 -- reportlabel, global_var *)
         report_fault_used := FALSE;
         width := 0;
+        file_remove_prefix: TEXT := NIL;
 
     METHODS
         Type_Init(type: Type_t; typedef := FALSE) := Type_Init;
@@ -2319,8 +2320,12 @@ END set_error_handler;
 PROCEDURE Prefix_Print(self: T; multipass: Multipass_t) =
 BEGIN
     self.comment("begin unit");
+(* TODO These are unnecessary target-specificity. Write to a separate file.
+   Maybe include "m3target.h"
     self.comment("M3_TARGET = ", Target.System_name);
     self.comment("M3_WORDSIZE = ", IntToDec(Target.Word.size));
+*)
+    self.file_remove_prefix := "../" & Target.build_dir;
     self.static_link_id := M3ID.Add("_static_link");
     self.alloca_id := M3ID.Add("alloca");
     self.setjmp_id := M3ID.Add("m3_setjmp");
@@ -2414,7 +2419,23 @@ PROCEDURE set_source_file(self: T; file: TEXT) =
 (* Sets the current source file name. Subsequent statements
    and expressions are associated with this source location. *)
 BEGIN
+
+    (* builder/frontend issues things like:
+
+ /* set_source_file file:../ALPHA_LINUXc/AtomAtomTbl.i3 => ../src/table/Table.ig */
+
+   while is this informative, it is also doubly problematic.
+     - The debugger probably does not understand this.
+     - It it target-specificity in otherwise target-independent or
+       nearly target independent output
+*)
+
     file := TextUtils.SubstChar(file, '\\', '/');
+
+    IF TextUtils.StartsWith(file, self.file_remove_prefix) THEN
+      file := Text.Sub (file, Text.Length (self.file_remove_prefix));
+    END;
+
     IF DebugVerbose(self) THEN
         self.comment("set_source_file file:", file);
     ELSE

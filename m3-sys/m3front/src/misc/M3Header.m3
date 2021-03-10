@@ -9,6 +9,7 @@ MODULE M3Header;
 
 IMPORT File, Token, Host, M3ID, Scanner;
 FROM Scanner IMPORT GetToken, cur;
+FROM Target IMPORT M3BackendMode_t;
 
 TYPE
   TK = Token.T;
@@ -103,8 +104,11 @@ PROCEDURE PushGeneric (VAR s: State) =
     s.generic := Host.OpenUnit (genericName, s.interface, TRUE, filename);
     IF (s.generic = NIL) THEN s.failed := TRUE;  RETURN; END;
 
-    (* build a synthetic file name & start reading *)
-    filename := old_filename & " => " & filename;
+    (* build a synthetic file name & start reading
+     *)
+    IF Host.m3backend_mode # M3BackendMode_t.C THEN
+      filename := old_filename & " => " & filename;
+    END;
     Scanner.Push (filename, s.generic, is_main := Scanner.in_main);
 
     (* make sure we got what we wanted *)

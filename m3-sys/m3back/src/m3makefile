@@ -10,7 +10,7 @@
 import ("libm3")
 import ("m3middle")
 import ("m3objfile")
-
+%include ("sysutils")
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % HACK ALERT! THE FOLLOWING TWO FILES ARE DEPRECATED
 % THEY ARE A MASSIVE HACK BECAUSE THE INTEGRATED BACK-END (m3back)

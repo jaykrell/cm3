@@ -17,7 +17,7 @@ IMPORT Target;
 FROM Target IMPORT M3BackendMode_t, BackendModeStrings;
 FROM M3Path IMPORT OSKind, OSKindStrings;
 IMPORT Pathname;
-IMPORT QPromise, QPromiseSeq, RefSeq;
+IMPORT QPromise, QPromiseSeq, RefSeq, Host;
 
 TYPE
   UK = M3Unit.Kind;
@@ -297,6 +297,7 @@ PROCEDURE CompileUnits (main     : TEXT;
         ConfigErr (s, "BACKEND_MODE or M3_BACKEND_MODE", "not defined");
     END;
     s.m3backend_mode := ConvertBackendModeStringToEnum(s, value);
+    Host.m3backend_mode := s.m3backend_mode;
 
     value := GetDefn (s, "TARGET_NAMING");
     IF value # NIL THEN

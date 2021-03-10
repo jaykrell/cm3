@@ -7,10 +7,11 @@ IMPORT Env, IntArraySort, IntRefTbl, M3ID, Pathname, Text, TextList, Thread, Wr;
 IMPORT Quake, QValue, QCode, QMachine, QVal, QVSeq, QVTbl, M3Timers;
 IMPORT Arg, Builder, M3Loc, M3Options, M3Path, M3Unit, Msg, Utils;
 FROM QMachine IMPORT PushBool, PushText, PopText, PopID, PopBool;
-IMPORT MxConfig;
+IMPORT MxConfig, Host, Target;
 IMPORT OSError, Process, Dirs, TextUtils;
 
 TYPE
+  M3BackendMode_t = Target.M3BackendMode_t;
   UK = M3Unit.Kind;
   MM = M3Options.Mode;
 
@@ -152,6 +153,7 @@ PROCEDURE SetUp (t: T;  pkg, to_pkg, build_dir: TEXT)
     t.build_pkg_dir   := M3ID.Add (pkg);
     t.build_dir       := M3ID.Add (build_dir);
     t.text_build_dir  := build_dir;
+(*    Target.build_dir  := build_dir; *)
 
     t.pkg_use         := GetConfigPath (t, "PKG_USE");
     t.pkg_install     := GetConfigPath (t, "PKG_INSTALL");
@@ -305,10 +307,20 @@ PROCEDURE AddSource (t: T;  nm: M3ID.T;  kind: UK;  hidden: BOOLEAN)
 
 PROCEDURE AddDerived (t: T;  name: M3ID.T;  kind: UK;  hidden: BOOLEAN) =
   VAR
-    loc  := Location (t, t.build_pkg, t.build_dir);
+    loc  : M3Loc.T;
+    unit : M3Unit.T;
+    file : TEXT;
+  BEGIN
+
+    IF Host.m3backend_mode = M3BackendMode_t.C THEN
+      loc  := Location (t, t.build_pkg, t.build_dir);
+    ELSE
+      loc  := Location (t, t.build_pkg, t.build_dir);
+    END;
+
     unit := M3Unit.New (name, kind, loc, hidden := hidden, imported := FALSE);
     file := M3Unit.FileName (unit);
-  BEGIN
+
     unit.debug := t.current_options.debug;
     unit.optimize := t.current_options.optimize;
     EVAL t.derived.put (M3ID.Add (file), NIL);
