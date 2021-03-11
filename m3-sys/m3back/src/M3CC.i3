@@ -1,11 +1,10 @@
 INTERFACE M3CC;
-IMPORT Ctypes; (* favor Ctypes over Cstdint to work with older m3core *)
+IMPORT Ctypes;
 
-TYPE INT32 = Ctypes.int;
-(*TYPE UINT32 = Ctypes.unsigned_int;*)
-
-<*EXTERNAL M3CC__IntToHex*>  PROCEDURE  IntToHex(a: INTEGER): TEXT;
-<*EXTERNAL M3CC__UIntToHex*> PROCEDURE UIntToHex(a: INTEGER): TEXT;
-<*EXTERNAL M3CC__IntToDec*>  PROCEDURE IntToDec(a: INTEGER): TEXT;
+(* Return value is the offset in buf of the start of the string,
+ * which is implied to go to the end.
+ *)
+<*EXTERNAL M3CC__IntToBuf*>
+PROCEDURE IntToBuf(a: Ctypes.unsigned; base: [2..36]; negate: BOOLEAN; VAR buf: ARRAY [0..255] OF CHAR): INTEGER;
 
 END M3CC.

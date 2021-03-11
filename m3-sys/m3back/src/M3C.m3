@@ -2,7 +2,7 @@ MODULE M3C;
 
 IMPORT RefSeq, TextSeq, Wr, Text, IntRefTbl, SortedIntRefTbl, TIntN, IntIntTbl;
 IMPORT M3CG, M3CG_Ops, Target, TFloat, TargetMap, IntArraySort, Process;
-IMPORT M3ID, TInt, TWord, ASCII, Thread, Stdio, Word, TextUtils;
+IMPORT M3ID, TInt, TWord, ASCII, Thread, Stdio, Word, TextUtils, Ctypes;
 FROM TargetMap IMPORT CG_Bytes;
 FROM M3CG IMPORT Name, ByteOffset, CallingConvention;
 FROM M3CG IMPORT BitSize, ByteSize, Alignment, Frequency;
@@ -12,8 +12,9 @@ FROM M3CG IMPORT CompareOp, ConvertOp, RuntimeError, MemoryOrder, AtomicOp;
 FROM Target IMPORT CGType;
 FROM M3CG_Ops IMPORT ErrorHandler;
 IMPORT M3CG_MultiPass, M3CG_DoNothing, M3CG_Binary, RTIO;
-FROM M3CC IMPORT IntToDec, IntToHex, UIntToHex, INT32;
+FROM M3CC IMPORT IntToBuf;
 CONST NameT = M3ID.ToText;
+TYPE INT32 = Ctypes.int;
 
 (* 
 Something like:
@@ -6731,6 +6732,28 @@ BEGIN
     self.comment("fetch_and_op");
     <* ASSERT CG_Bytes[ztype] >= CG_Bytes[mtype] *>
 END fetch_and_op;
+
+PROCEDURE IntToText(a: INTEGER; base: [2..36]; neg: BOOLEAN): TEXT =
+VAR buf := ARRAY[0..255] OF CHAR;
+    offset := IntToBuf(a, base, neg, buf);
+BEGIN
+  RETURN Text.FromChars(SUBARRAY(buf, offset, 256 - offset));
+END IntToText;
+
+PROCEDURE IntToDec(a: INTEGER) : TEXT =
+BEGIN
+  RETURN IntToText(a, 10, a < 0);
+END IntToDec;
+
+PROCEDURE IntToHex(a: INTEGER) : TEXT =
+BEGIN
+  RETURN IntToText(a, 16, a < 0);
+END IntToHex;
+
+PROCEDURE UIntToHex(a: INTEGER) : TEXT =
+BEGIN
+  RETURN IntToText(a, 16, FALSE);
+END UIntToHex;
 
 BEGIN
     BitsToCGUInt[8] := CGType.Word8;
