@@ -12,7 +12,6 @@ FROM M3CG IMPORT CompareOp, ConvertOp, RuntimeError, MemoryOrder, AtomicOp;
 FROM Target IMPORT CGType;
 FROM M3CG_Ops IMPORT ErrorHandler;
 IMPORT M3CG_MultiPass, M3CG_DoNothing, M3CG_Binary, RTIO;
-FROM M3CC IMPORT IntToBuf;
 CONST NameT = M3ID.ToText;
 TYPE INT32 = Ctypes.int;
 
@@ -6733,8 +6732,42 @@ BEGIN
     <* ASSERT CG_Bytes[ztype] >= CG_Bytes[mtype] *>
 END fetch_and_op;
 
+PROCEDURE Abs(a: INTEGER): Word.T =
+BEGIN
+  IF Word.LT(a, 0) THEN
+    a := Word.Times(a, -1);
+  END;
+  RETURN a;
+END Abs;
+
+(* Return value is the offset in buf of the start of the string,
+ * which is implied to go to the end (and no terminal nul).
+ *)
+PROCEDURE IntToBuf(a: INTEGER; base: [2..36]; neg: BOOLEAN; VAR buf: ARRAY [0..255] OF CHAR): INTEGER =
+CONST chars = ARRAY OF CHAR{
+    '0','1','2','3','4','5','6','7','8','9',
+    'A','B','C','D','E','F','G','H','I','J',
+    'K','L','M','N','O','P','Q','R','S','T',
+    'U','V','W','X','Y','Z'};
+VAR i := 256;
+BEGIN
+  IF neg THEN
+    a := Abs(a);
+  END;
+  REPEAT
+    DEC(i);
+    buf[i] := chars[Word.Mod(a, base)];
+    a := Word.Divide(a, base);
+  UNTIL a = 0;
+  IF neg THEN
+    DEC(i);
+    buf[i] := '-';
+  END;
+  RETURN i;
+END IntToBuf;
+
 PROCEDURE IntToText(a: INTEGER; base: [2..36]; neg: BOOLEAN): TEXT =
-VAR buf := ARRAY[0..255] OF CHAR;
+VAR buf : ARRAY[0..255] OF CHAR;
     offset := IntToBuf(a, base, neg, buf);
 BEGIN
   RETURN Text.FromChars(SUBARRAY(buf, offset, 256 - offset));
