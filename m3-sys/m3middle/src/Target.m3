@@ -110,6 +110,10 @@ PROCEDURE Init (system: TEXT; in_OS_name: TEXT; backend_mode: M3BackendMode_t): 
 
     IF backend_mode = M3BackendMode_t.C THEN
       Setjmp := "m3_setjmp";
+    ELSIF System IN SET OF Systems{Systems.I386_MINGW,
+                                   Systems.I386_NT,
+                                   Systems.NT386} THEN
+      Setjmp := "_setjmp3";
     ELSE
       (* Do not save/restore signal mask. Doing so is much more expensive. *)
       Setjmp := "_setjmp";

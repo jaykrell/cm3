@@ -280,7 +280,7 @@ PROCEDURE GenInitProc (p: P): CG.Proc =
                              Type.GlobalUID (p),
                              in_memory := FALSE, up_level := FALSE,
                              f := CG.Always);
-    CG.Begin_procedure (proc);
+    CG.Begin_procedure (proc, NIL(*jmpbufs*));
     
 
     (* initialize the referent *)

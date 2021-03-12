@@ -60,7 +60,6 @@ PROCEDURE Init () =
     EF1_jmpbuf     := EF1_info + EA_SIZE;  (* : jmp_buf *)
 
     (* TODO: Teach backend about jmp_buf and have backend do this layout *)
-    <* ASSERT Target.Alloca_jmpbuf *>
     IF Target.Alloca_jmpbuf THEN
       EF1_SIZE       := EF1_jmpbuf + AP;
     ELSE

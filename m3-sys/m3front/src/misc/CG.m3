@@ -10,7 +10,7 @@ MODULE CG;
 
 IMPORT Text, IntIntTbl, IntRefTbl, Fmt, Word;
 IMPORT Scanner, Error, Module, RunTyme, WebInfo;
-IMPORT M3, M3CG, M3CG_Ops, M3CG_Check;
+IMPORT M3, M3CG, M3CG_Ops, M3CG_Check, Jmpbufs;
 IMPORT Host, Target, TInt, TFloat, TWord, TargetMap, M3RT (**, RTObject **);
 
 CONST
@@ -1240,7 +1240,7 @@ PROCEDURE Declare_procedure (n: Name;  n_params: INTEGER;  ret_type: Type;
     RETURN p;
   END Declare_procedure;
 
-PROCEDURE Begin_procedure (p: Proc) =
+PROCEDURE Begin_procedure (p: Proc; jmpbufs: Jmpbufs.Proc) =
   VAR N : ProcStackNodeRef := NEW(ProcStackNodeRef); 
   BEGIN 
     N.link := ProcStackRoot;
@@ -1252,6 +1252,7 @@ PROCEDURE Begin_procedure (p: Proc) =
     busy_temps    := NIL;
     block_cnt      := 0;
     cg.begin_procedure (p);
+    Jmpbufs.CompileProcAllocateJmpbufs (jmpbufs);
   END Begin_procedure;
 
 PROCEDURE End_procedure (p: Proc) =

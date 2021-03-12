@@ -585,7 +585,7 @@ PROCEDURE GenBody (p: T) =
     cconv   := ProcType.CallConv (p.signature);
 
     CG.Gen_location (p.origin);
-    CG.Begin_procedure (p.cg_proc);
+    CG.Begin_procedure (p.cg_proc, p.jmpbufs);
     Scope.Enter (p.syms);
 
     Marker.PushProcedure (tresult, p.result, cconv);
@@ -594,7 +594,6 @@ PROCEDURE GenBody (p: T) =
         Scope.InitValues (p.syms);
         Scanner.offset := BlockStmt.BodyOffset (p.block);
         Coverage.CountProcedure (p);
-        Jmpbufs.CompileProcAllocateJmpbufs (p.jmpbufs);
         oc := Stmt.Compile (p.block);
         fallThru := (Stmt.Outcome.FallThrough IN oc);
       EndRaises (p, l, frame, fallThru);

@@ -1097,7 +1097,7 @@ PROCEDURE EmitBody (x: InitBody) =
     CG.Comment (-1, FALSE, "module main body ", x.name);
     Scanner.offset := t.body_origin;
     CG.Gen_location (t.body_origin);
-    CG.Begin_procedure (x.cg_proc);
+    CG.Begin_procedure (x.cg_proc, NIL(*jmpbufs*));
 
     CG.Load_int (Target.Integer.cg_type, x.arg);
     CG.If_false (skip, CG.Never);
@@ -1110,7 +1110,6 @@ PROCEDURE EmitBody (x: InitBody) =
 
     (* perform the main body *)
     Tracer.Push (t.trace);
-    Jmpbufs.CompileProcAllocateJmpbufs (t.jmpbufs);
     EVAL Stmt.Compile (t.block);
     Tracer.Pop (t.trace);
 

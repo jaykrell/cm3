@@ -232,8 +232,7 @@ PROCEDURE Compile2 (p: P): Stmt.Outcomes =
     Scanner.offset := p.forigin;
     CG.Gen_location (p.forigin);
     IF (Host.inline_nested_procs) THEN
-      CG.Begin_procedure (p.handler.cg_proc);
-      Jmpbufs.CompileProcAllocateJmpbufs (p.handler.jmpbufs);
+      CG.Begin_procedure (p.handler.cg_proc, p.handler.jmpbufs);
       xc := Stmt.Compile (p.finally);
       CG.Exit_proc (CG.Type.Void);
       CG.End_procedure (p.handler.cg_proc);
@@ -279,8 +278,7 @@ PROCEDURE EmitBody (x: HandlerProc) =
       (* generate the actual procedure *)
       Scanner.offset := p.forigin;
       CG.Gen_location (p.forigin);
-      CG.Begin_procedure (x.cg_proc);
-      Jmpbufs.CompileProcAllocateJmpbufs (x.jmpbufs);
+      CG.Begin_procedure (x.cg_proc, x.jmpbufs);
       EVAL Stmt.Compile (p.finally);
       CG.Exit_proc (CG.Type.Void);
       CG.End_procedure (x.cg_proc);

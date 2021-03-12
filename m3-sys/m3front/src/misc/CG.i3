@@ -8,7 +8,7 @@
 
 INTERFACE CG;
 
-IMPORT Target, M3CG, M3;
+IMPORT Target, M3CG, M3, Jmpbufs;
 
 (*
 This interface provides a single front-end specific veneer over
@@ -323,7 +323,7 @@ PROCEDURE Declare_procedure (n: Name;  n_params: INTEGER;  ret_type: Type;
    The formal parameters are specified by the subsequent 'declare_param'
    calls. *)
 
-PROCEDURE Begin_procedure (p: Proc);
+PROCEDURE Begin_procedure (p: Proc; jmpbufs: Jmpbufs.Proc);
 (* begin generating code for the procedure 'p'.  Sets "current procedure"
    to 'p'. *)
 

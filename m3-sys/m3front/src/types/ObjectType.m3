@@ -793,7 +793,7 @@ PROCEDURE GenInitProc (p: P): CG.Proc =
                              Type.GlobalUID (p),
                              in_memory := FALSE, up_level := FALSE,
                              f := CG.Always);
-    CG.Begin_procedure (proc);
+    CG.Begin_procedure (proc, NIL(*jmpbufs*));
 
     (* allocate and initialize a pointer to the data fields *)
     CG.Load_addr (obj);
@@ -876,7 +876,7 @@ PROCEDURE GenLinkProc (p: P;  defaults: INTEGER): CG.Proc =
                              Type.GlobalUID (Addr.T),
                              in_memory := FALSE, up_level := FALSE,
                              f := CG.Always);
-    CG.Begin_procedure (proc);
+    CG.Begin_procedure (proc, NIL(*jmpbufs*));
 
     (* grab the default methodlist pointer *)
     CG.Load_addr (defn);

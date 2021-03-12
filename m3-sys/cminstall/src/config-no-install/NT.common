@@ -476,16 +476,17 @@ if equal(OS_TYPE, "WIN32")
     end
 
     if USE_MSVCRT
-        SYSTEM_LIBS{"LIBC"} += [LibIn("msvcrt")]
+        %SYSTEM_LIBS{"LIBC"} += [LibIn("msvcrt")]
+        SYSTEM_LIBS{"LIBC"} += [LibIn("libcmt")]
         if VS2015_OR_NEWER
-            SYSTEM_LIBS{"LIBC"} += [LibIn("vcruntime")]
-            SYSTEM_LIBS{"LIBC"} += [LibIn("ucrt")]
+            %SYSTEM_LIBS{"LIBC"} += [LibIn("vcruntime")]
+            %SYSTEM_LIBS{"LIBC"} += [LibIn("ucrt")]
         end
     else
         SYSTEM_LIBS{"LIBC"} += [LibIn("libcmt")]
         if VS2015_OR_NEWER
-            SYSTEM_LIBS{"LIBC"} += [LibIn("libvcruntime")]
-            SYSTEM_LIBS{"LIBC"} += [LibIn("libucrt")]
+            %SYSTEM_LIBS{"LIBC"} += [LibIn("libvcruntime")]
+            %SYSTEM_LIBS{"LIBC"} += [LibIn("libucrt")]
         end
     end
 end
@@ -635,41 +636,17 @@ proc compile_c_ms(source, object, options, optimize, debug) is
 % in any log.
 %
         "-nologo",
-
-%
-% needed for older headers such as with Visual C++ 2.0
-%
-        "-DWIN32",
-
-%
-% Don't put any default library names in .objs.
-%
-        "-Zl",
         options
     ]
 
-    %
-    % Put type information in .objs/.libs instead of shared in vc80.pdb, etc.
-    % vc80.pdb can be renamed with /Fd, we'd need the target name.
-    % This is bigger/slower but has advantages too.
-    % Debug information does not inhibit optimization so always generate it.
-    %
-    % Set CM3_NO_SYMBOLS to "bootstrap backwards" -- build with newer toolsets
-    % such that you can subsequently build with older toolsets.
-    %
-    if not defined("NO_SYMBOLS")
-        NO_SYMBOLS = equal($CM3_NO_SYMBOLS, "1")
-    end
 
-    if not NO_SYMBOLS
-        args += ["-Z7"]
-    end
+    args += ["-Z7"]
 
     if USE_MSVCRT
         %
         % Use msvcrt.lib and define _MT and _DLL.
         %
-        args += ["-MD"]
+        args += ["-MT"]
     else
         %
         % Use libcmt.lib and define _MT.
@@ -890,26 +867,26 @@ end
 %
 
 proc make_dll_ms(options, objects, imported_libs, lib_file, def_file, dll_file, listing, LinkResponseFile) is
+    % Use the compiler to drive the linker.
+    % The compiler insists on a source file. Provide an empty one.
+    > "_m3empty.c" in write("") end
     return try_exec(
-        "@link.exe",
-        WriteResponseFile(
-            LinkResponseFile,
-            " ",
-            [
-                m3_link_flags,
-% Put this in to "bootstrap backwards" -- build with newer toolsets
-% such that you can subsequently build with older toolsets.
-%               "-link50compat",
-                "-def:" & def_file,
-                "-dll",
-                "-out:" & dll_file,
-                 options,
-                 objects,
-                 subst_chars(imported_libs, "/", "\\"),
-                 subst_chars(UseHand, "/", "\\"),
-                 subst_chars(UseUconstants, "/", "\\"),
-                 subst_chars(UseWinConstants, "/", "\\"),
-            ]),
+        "cl.exe",
+        "_m3empty.c",
+        "-LD",
+        "-MT",
+        "-link",
+        m3_link_flags,
+        "-def:" & def_file,
+        "-dll",
+        "-implib:" & lib_file,
+        "-out:" & dll_file,
+        options,
+        imported_libs,
+        UseHand,
+        UseUconstants,
+        UseWinConstants,
+        objects,
         "2>&1",
         ">", listing
         )
@@ -1004,6 +981,7 @@ proc make_lib(lib, options, objects, imported_libs, shared) is
     deriveds("", Outputs)
 
     local m3_lib_flags = [ ]
+
     if equal(LINKER, "MS")
         % m3_lib_flags = ["-debugtype:cv", "-machine:i386"]
         m3_lib_flags = ["-ign:__real"]
@@ -1051,7 +1029,7 @@ proc make_lib(lib, options, objects, imported_libs, shared) is
                 make_dll_ms(
                     options,
                     objects,
-                    subst_chars(imported_libs, "/", "\\"),
+                    imported_libs,
                     lib_file,
                     def_file,
                     dll_file,
@@ -1151,16 +1129,6 @@ end
 
 m3_link_flags =
 [
-%
-% Ignore that some .libs think they want libc.lib.
-% This should not needed in a full coherent build, however
-% existing distributions, such as 5.2.6, have C code built
-% without /MD or /MT and bootstrapping uses their files,
-% such as m3core.lib.sa(hand.obj).
-%
-% Cutting the C runtime dependency from Modula-3 may be desirable.
-%
-    "-nodefaultlib",
 %
 % Generate a .pdb for debugging.
 %

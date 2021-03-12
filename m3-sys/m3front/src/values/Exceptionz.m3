@@ -345,7 +345,7 @@ PROCEDURE EmitBody (x: Raiser) =
     info: Type.Info;
   BEGIN
     CG.Gen_location (t.origin);
-    CG.Begin_procedure (x.cg_proc);
+    CG.Begin_procedure (x.cg_proc, NIL(*jmpbufs*));
     EVAL Type.CheckInfo (t.tipe, info);
     align := info.alignment;
 

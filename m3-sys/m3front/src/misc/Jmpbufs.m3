@@ -55,6 +55,7 @@ BEGIN
     RETURN NIL;
   END;
   DebugPrint("CompileTryGetJmpbuf " & IdToText(try.proc.name));
+(*  CompileProcAllocateJmpbufs (try.proc); *)
   IF try.proc = NIL THEN
     Error.Msg ("CompileTryGetJmpbuf try.proc = NIL");
   END;
@@ -85,6 +86,7 @@ VAR module: Module.T;
     alloca: CG.Proc;
     size: CG.Var;
     try_count: INTEGER;
+    (*l_allocated: CG.Label;*)
 BEGIN
     IF NOT Target.Alloca_jmpbuf THEN RETURN; END;
     IF p = NIL THEN RETURN END;
@@ -122,6 +124,13 @@ BEGIN
                                         f := CG.Likely);
     END;
 
+(*
+    CG.Load_addr (p.jmpbufs[0]);
+    CG.Loophole (Target.Address.cg_type, Target.Word.cg_type);
+    CG.Load_integer (cg_type, TInt.Zero);
+    l_allocated := CG.Next_label (1);
+    CG.If_compare (cg_type, CG.Cmp.EQ, l_allocated, CG.Likely);
+*)
     (* If referencing the size more than once, store
        the global in a local. *)
 
@@ -163,6 +172,7 @@ BEGIN
         CG.Store_addr (p.jmpbufs[i]);
       END;
     END;
+    (*CG.Set_label (l_allocated);*)
 END CompileProcAllocateJmpbufs;
 
 BEGIN
