@@ -412,6 +412,7 @@ def TargetOnlyHasCBackend(a):
     if a == "i386_nt":
         return false
     return (a.endswith("_nt") or a.startswith("arm64") or a.startswith("riscv") or
+        a == "amd64_freebsd" or
         a.endswith("solaris") or a.startswith("sol"))
 
 _PossibleCm3Flags = ["boot", "keep", "override", "commands", "verbose", "why", "debug", "trace"]
