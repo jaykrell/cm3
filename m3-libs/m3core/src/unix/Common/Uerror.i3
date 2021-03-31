@@ -112,6 +112,8 @@ FROM Ctypes IMPORT int;
 <*EXTERNAL "Uerror__EUSERS"*>        VAR EUSERS: int;
 <*EXTERNAL "Uerror__EWOULDBLOCK"*>   VAR EWOULDBLOCK: int;
 
+<*EXTERNAL "Uerror__Get_sys_nerr"*> PROCEDURE Get_sys_nerr(): int;
+
 CONST
   Max = 248; (* approx, verified to be adequate in Uconstants.c *)
 

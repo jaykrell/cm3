@@ -30,8 +30,12 @@ typedef union {
 #define X(x) char a##x[x];
 #include "UerrorX.h"
 } CheckMax_t;
+
+// This might is probably not FreeBSD-specific.
+#if !defined(__cplusplus) || !defined(__clang__) || !defined(__FreeBSD__)
 /* check that Uerror.Max=248 is enough; if you get an error here, raise it in Uerror.i3 and here */
 typedef int CheckMax[248 - sizeof(CheckMax_t)];
+#endif
 
 #if __GNUC__ >= 4
 #ifdef __APPLE__
@@ -40,6 +44,17 @@ typedef int CheckMax[248 - sizeof(CheckMax_t)];
 #pragma GCC visibility push(protected)
 #endif
 #endif
+
+int
+__cdecl
+Uerror__Get_sys_nerr(void)
+{
+#ifdef _WIN32
+    return _sys_nerr;
+#else
+    return sys_nerr;
+#endif
+}
 
 #undef X
 #define X(x) EXTERN_CONST int Uerror__##x = x;

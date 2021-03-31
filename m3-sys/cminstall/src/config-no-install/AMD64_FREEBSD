@@ -1,6 +1,9 @@
 readonly TARGET = "AMD64_FREEBSD"
 readonly GNU_PLATFORM = "amd64-freebsd" % "cpu-os" string for GNU
 
+% m3cc does work on this platform.
+M3_BACKEND_MODE = "C"
+
 SYSTEM_CC = "g++ -g -m64 -fPIC"
 readonly SYSTEM_ASM = "as -64"
 
