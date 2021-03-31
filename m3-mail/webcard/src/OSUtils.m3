@@ -38,7 +38,7 @@ PROCEDURE ErrorMessage (ec: EC): Text.T =
   VAR
     p: char_star;
   BEGIN
-    IF ec <= Uerror.Max THEN
+    IF ec <= Uerror.Get_sys_nerr() AND ec <= Uerror.Max THEN
       p := Cstring.strerror(ec);
       RETURN M3toC.StoT(p);  (* assumes sys err list is static *)
     ELSE
