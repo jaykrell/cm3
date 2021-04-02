@@ -4107,6 +4107,7 @@ PROCEDURE Err (msg: TEXT) =
     msg := "** INTERNAL CG ERROR *** " & msg;
     Error.Msg (msg);
     cg.comment (msg);
+    SDump ();
   END Err;
 
 PROCEDURE ErrI (n: INTEGER;  msg: TEXT) =
@@ -4114,6 +4115,7 @@ PROCEDURE ErrI (n: INTEGER;  msg: TEXT) =
     msg := "** INTERNAL CG ERROR *** " & msg;
     Error.Int (n, msg);
     cg.comment (msg, ": ", Fmt.Int (n));
+    SDump ();
   END ErrI;
 
 PROCEDURE NewIntTbl (): IntIntTbl.T =
@@ -4142,10 +4144,12 @@ CONST
     "Pointer  " 
   };
 
-PROCEDURE SDump (tag: TEXT) =
+PROCEDURE SDump (tag: TEXT := NIL) =
   VAR msg: TEXT;
   BEGIN
-    cg.comment (tag);
+    IF tag # NIL THEN
+      cg.comment (tag);
+    END;
     cg.comment ("------------ begin stack dump ------------");
     FOR i := tos-1 TO 0 BY -1 DO
       WITH x = stack[i] DO
