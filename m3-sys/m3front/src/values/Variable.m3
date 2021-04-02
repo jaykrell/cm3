@@ -417,6 +417,7 @@ PROCEDURE Load (t: T) =
         CG.Boost_addr_alignment (t.cg_align);
       ELSIF (t.indirect) THEN
         CG.Load_addr (t.cg_var, t.offset, t.cg_align);
+        CG.Boost_addr_alignment (MAX (t.cg_align, t.align));
       ELSE
         CG.Load_addr_of (t.cg_var, t.offset, CG.GCD(t.cg_align, t.offset));
       END;
@@ -429,11 +430,13 @@ PROCEDURE Load (t: T) =
         Module.LoadGlobalAddr (Scope.ToUnit (t), t.offset, is_const := FALSE);
         IF (t.indirect) THEN
           CG.Load_indirect (CG.Type.Addr, 0, Target.Address.size);
+          CG.Boost_addr_alignment (MAX (t.cg_align, t.align));
         END;
         CG.Boost_addr_alignment (t.cg_align);
         CG.Load_indirect (t.stk_type, 0, t.size, type_info.addr_align);
       ELSIF (t.indirect) THEN
         CG.Load_addr (t.cg_var, t.offset, t.cg_align);
+        CG.Boost_addr_alignment (MAX (t.cg_align, t.align));
         CG.Load_indirect (t.stk_type, 0, t.size, type_info.addr_align);
       ELSE
         CG.Load
@@ -461,7 +464,7 @@ PROCEDURE LoadLValue (t: T) =
     ELSE
       CG.Load_addr_of (t.cg_var, t.offset, CG.GCD (t.cg_align, t.offset));
     END;
-    CG.Boost_addr_alignment (t.cg_align);
+    CG.Boost_addr_alignment (MAX (t.cg_align, t.align));
   END LoadLValue;
 
 (* EXPORTED *)
