@@ -21,8 +21,10 @@ h_source("m3core")
 include_dir ("Csupport")
 include_dir ("runtime")
 include_dir ("thread")
+if not ({"NT", "MINGW", "CYGWIN"} contains TARGET_OS)
 if not defined("NOPTHREAD") and equal(OS_TYPE, "POSIX")
   include_dir ("coroutine")
+end
 end
 
 if equal (TARGET, "OS2")

@@ -1,0 +1,11 @@
+readonly TARGET_OS = "CYGWIN"         % FREEBSD, LINUX, NT, SOLARIS, CYGWIN, etc.
+
+M3_BACKEND_MODE = "C"
+
+readonly TARGET = TARGET_ARCH & "_" & TARGET_OS
+
+SYSTEM_CC = "g++"
+
+include("Unix.common")
+
+SYSTEM_LIBS{"LIBC"} += "-lcomctl32 -lgdi32 -lcomdlg32"

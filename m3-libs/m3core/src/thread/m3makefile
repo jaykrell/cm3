@@ -66,8 +66,8 @@ end
 
 end
 
-if equal (OS_TYPE, "WIN32") or equal(TARGET, "NT386")
-    or ({"NT", "MINGW", "CYGWIN"} contains TARGET)
+% TODO Switch Cygwin to Posix threads?
+if {"NT", "MINGW", "CYGWIN"} contains TARGET_OS
   include_dir ("WIN32")
 else
   if (not defined("NOPTHREAD"))

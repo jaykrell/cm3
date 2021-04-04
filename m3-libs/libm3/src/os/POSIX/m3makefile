@@ -22,11 +22,11 @@ implementation("SocketPosix")
 implementation("OSConfigPosix")
 
 module("ProcessPosixCommon")
-if equal (TARGET, "NT386")
-    implementation("ProcessCygwin")
-else
+%if {"CYGWIN"} contains TARGET_OS % TODO
+%    implementation("ProcessCygwin")
+%else
     implementation("ProcessPosix")
-end
+%end
 
 c_source("FilePosixC")
 interface("FilePosixC")
