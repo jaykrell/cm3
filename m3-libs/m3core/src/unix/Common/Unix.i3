@@ -45,6 +45,7 @@ CONST
 <*EXTERNAL "Unix__dup"*>PROCEDURE dup (oldd: int): int;
 <*EXTERNAL "Unix__dup2"*>PROCEDURE dup2 (oldd, newd: int): int;
 <*EXTERNAL "Unix__execve"*>PROCEDURE execve (name: const_char_star;  argv, envp: char_star_star): int;
+<*EXTERNAL "Uexec__spawnve"*>PROCEDURE spawnve(mode: int; name: const_char_star; argv: char_star_star; envp: char_star_star): int;
 
 <*EXTERNAL "Unix__exit"*>PROCEDURE exit (i: int);
 <*EXTERNAL "Unix__underscore_exit"*>PROCEDURE underscore_exit (i: int);
@@ -328,5 +329,7 @@ PROCEDURE Assertions();
 (*CONST*) <*EXTERNAL Unix__TTYDISC*> VAR TTYDISC: int;
 (*CONST*) <*EXTERNAL Unix__VTDELAY*> VAR VTDELAY: int;
 (*CONST*) <*EXTERNAL Unix__XTABS*> VAR XTABS: int;
+
+(*CONST*) <*EXTERNAL Unix__P_NOWAIT*> VAR P_NOWAIT: int;
 
 END Unix.

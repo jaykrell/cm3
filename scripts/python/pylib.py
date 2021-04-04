@@ -62,6 +62,9 @@ if os.environ.get("M3CONFIG", "").lower().find("m3-syscminstallsrcconfig") != -1
     print("backslash problem; environment variable M3CONFIG is " + getenv("M3CONFIG"))
     sys.exit(1)
 
+def IsCygwin():
+    return os.name == "posix" and os.uname()[0].lower().startswith("cygwin")
+
 def IsInterix():
     return os.name == "posix" and os.uname()[0].lower().startswith("interix")
 
@@ -800,11 +803,15 @@ def IsCygwinBinary(a):
         return False
     if not isfile(a):
         FatalError(a + " does not exist")
+
+    if IsCygwin():
+        return (os.system("grep -q cygwin1.dll \"" + a + "\"") == 0)
+
+    # This is all wierd.
     a = a.replace("/cygdrive/c/", "c:\\")
     a = a.replace("/cygdrive/d/", "d:\\")
     a = a.replace("/", "\\")
     a = ConvertFromCygwinPath(a)
-    #print("a is " + a)
     return (os.system("findstr 2>&1 >" + os.devnull + " /m cygwin1.dll \"" + a + "\"") == 0)
 
 #-----------------------------------------------------------------------------

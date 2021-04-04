@@ -1,0 +1,2 @@
+include("AMD64.common")
+include("Cygwin.common")

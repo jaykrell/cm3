@@ -124,11 +124,18 @@ RTProcess__Fork(void)
   int err = { 0 };
 #endif
 
+  // Cygwin is presently unusual: Posix system but Win32 threads.
+  // ThreadPThread__AtForkPrepareOutsideFork is only for Solaris.
+#ifndef __CYGWIN__
   // Run fork handlers outside of fork instead of in fork,
   // on Solaris, because on Solaris they run with signals deferred/disbled
   // and fork therefore deadlocks with collector.
   // See https://github.com/illumos/illumos-gate/blob/b89fc615f42c703d6100c78de04791708d190e5e/usr/src/lib/libc/port/threads/scalls.c#L194
+  //
+  // This scheme breaks down if real fork is called directly like from non-Modula-3 code,
+  // instead of calling RTProcess.Fork().
   ThreadPThread__AtForkPrepareOutsideFork();
+#endif
 
 #ifdef M3_USER_THREADS
   Scheduler__DisableSwitching();

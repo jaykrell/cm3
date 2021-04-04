@@ -1,4 +1,4 @@
-readonly TARGET_ARCH = "AMD64"
+readonly TARGET_ARCH = "AMD64"      % AMD64, I386, ARM64, SPARC32, SPARC64, etc.
 readonly TARGET_ENDIAN = "LITTLE"   % { "BIG" OR "LITTLE" }
 readonly WORD_SIZE = "64BITS"       % { "32BITS" or "64BITS" }
 

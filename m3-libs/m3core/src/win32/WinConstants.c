@@ -27,7 +27,9 @@ extern "C" {
 #endif
 
 #undef X
-#define X(x) DECLPSPEC_SELECTANY extern const unsigned WinNT__##x = x;
+#define X(x) \
+    DECLPSPEC_SELECTANY extern const unsigned WinNT__##x; /* Declare to avoid gcc warning. */ \
+    DECLPSPEC_SELECTANY extern const unsigned WinNT__##x = x;
 
 X(ACCESS_ALLOWED_ACE_TYPE)
 X(ACCESS_DENIED_ACE_TYPE)
@@ -3047,6 +3049,9 @@ X(GWLP_USERDATA)
 #ifdef GWLP_WNDPROC
 X(GWLP_WNDPROC)
 #endif
+
+#ifndef __CYGWIN__
+
 #ifdef HBMMENU_CALLBACK
 X(HBMMENU_CALLBACK)
 #endif
@@ -3080,6 +3085,9 @@ X(HBMMENU_POPUP_RESTORE)
 #ifdef HBMMENU_SYSTEM
 X(HBMMENU_SYSTEM)
 #endif
+
+#endif
+
 #ifdef HC_ACTION
 X(HC_ACTION)
 #endif
