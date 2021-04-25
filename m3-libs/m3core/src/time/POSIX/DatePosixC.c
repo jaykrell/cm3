@@ -61,7 +61,7 @@ static time_t TimePosix__ToSeconds(LONGREAL/*Time.T*/ t)
 
 void
 __cdecl
-DatePosix__FromTime(double t, /*const*/ INTEGER* pzone, Date_t* date, TEXT unknown, TEXT gmt)
+DatePosix__FromTime(double t, /*const*/ INTEGER* pzone, m3core_DatePosix_T* date, TEXT unknown, TEXT gmt)
 {
     struct tm* tm = 0;
 #ifdef _TIME64_T
@@ -125,12 +125,12 @@ DatePosix__FromTime(double t, /*const*/ INTEGER* pzone, Date_t* date, TEXT unkno
 
 double
 __cdecl
-DatePosix__ToTime(/*const*/ Date_t* date)
+DatePosix__ToTime(/*const*/ m3core_DatePosix_T* date)
 {
     struct tm tm;
     double t = 0;
 #ifdef DATE_BSD
-    const unsigned SecsPerHour = 60 * 60;
+    const unsigned SecondsPerHour = 60 * 60;
 #ifdef _TIME64_T
     time64_t now = 0;
 #else
@@ -170,7 +170,7 @@ DatePosix__ToTime(/*const*/ Date_t* date)
     assert(local_now != NULL);
     if (local_now->tm_isdst > 0)
       /* decrement the local time zone by one hour if DST is in effect */
-      local_now->m3_tm_gmtoff -= SecsPerHour;
+      local_now->m3_tm_gmtoff -= SecondsPerHour;
 
     /* As above, we must negate "date->offset" to account for the
        opposite sense of that field compared to Unix. */
@@ -182,9 +182,13 @@ Exit:
 
 void
 __cdecl
+<<<<<<< HEAD
 DatePosix__TypeCheck(/*const*/ Date_t* d, WORD_T sizeof_DateT)
+=======
+DatePosix__TypeCheck(/*const*/ m3core_DatePosix_T* d, WORD_T sizeof_DateT)
+>>>>>>> 973885e99... date work
 {
-    assert(sizeof(Date_t) == sizeof_DateT);
+    assert(sizeof(m3core_DatePosix_T) == sizeof_DateT);
     assert(d->year == 1);
     assert(d->month == 2);
     assert(d->day == 3);

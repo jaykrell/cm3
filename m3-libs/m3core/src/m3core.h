@@ -629,11 +629,15 @@ TEXT
 __cdecl
 M3toC__StoT(const char*);
 
+#ifndef m3core_DatePosix_T
+#define m3core_DatePosix_T m3core_DatePosix_T
+
 /* This MUST match DatePosix.i3.T.
  * The fields are ordered by size and alphabetically.
  * (They are all the same size.)
  */
-typedef struct {
+struct m3core_DatePosix_T
+{
     INTEGER day;
     INTEGER hour;
     INTEGER minute;
@@ -644,19 +648,22 @@ typedef struct {
     INTEGER year;
     TEXT    zone;
     INTEGER zzalign;
-} Date_t;
+};
+typedef struct m3core_DatePosix_T m3core_DatePosix_T;
+
+#endif
 
 void
 __cdecl
-DatePosix__FromTime(double t, /*const*/ INTEGER* zone, Date_t* date, TEXT unknown, TEXT gmt);
+DatePosix__FromTime(double t, /*const*/ INTEGER* zone, m3core_DatePosix_T* date, TEXT unknown, TEXT gmt);
 
 double
 __cdecl
-DatePosix__ToTime(/*const*/ Date_t* date);
+DatePosix__ToTime(/*const*/ m3core_DatePosix_T* date);
 
 void
 __cdecl
-DatePosix__TypeCheck(/*const*/ Date_t* d, WORD_T sizeof_DateT);
+DatePosix__TypeCheck(/*const*/ m3core_DatePosix_T* d, WORD_T sizeof_DateT);
 
 void
 __cdecl

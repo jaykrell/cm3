@@ -16,9 +16,15 @@ CONST GMT = "GMT";
 
 PROCEDURE FromTime(t: Time.T; z: TimeZone := NIL): Date.T =
   VAR d: DatePosix.T;
+      i: INTEGER;
+      pi := NIL;
   BEGIN
+    IF z # NIL THEN
+      i := z^;
+      pi := ADR(i);
+    END;
     Scheduler.DisableSwitching();
-    DatePosix.FromTime(t, z, d, Unknown, GMT);
+    DatePosix.FromTime(t, pi, d, Unknown, GMT);
     Scheduler.EnableSwitching();
     RETURN Date.T{day     := d.day,
                   hour    := d.hour,
