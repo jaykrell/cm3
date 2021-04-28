@@ -876,7 +876,7 @@ PROCEDURE mangle_procname (base: M3ID.T; arg_size: INTEGER;
 
 PROCEDURE declare_param (u: U;  n: Name;  s: ByteSize;  a: Alignment;
                          type: Type;  m3t: TypeUID;  in_memory, up_level: BOOLEAN;
-                         f: Frequency): Var =
+                         f: Frequency; <*UNUSED*>qid: M3CG.QID): Var =
   VAR v := NewVar(u, type, m3t, s, 4, n);
   BEGIN
     (* Assume a = 4 and ESP is dword aligned... *)
@@ -3314,7 +3314,7 @@ PROCEDURE start_int_proc (u: U;  b: Builtin) =
                                   desc.n_params, desc.ret_type,
                                   Target.ConventionFromID (desc.lang));
         FOR i := 1 TO desc.n_params DO
-          EVAL declare_param (u, M3ID.NoID, 4, 4, Type.Word32, 0, FALSE, FALSE, 100);
+          EVAL declare_param (u, M3ID.NoID, 4, 4, Type.Word32, 0, FALSE, FALSE, 100, M3CG.NoQID);
         END;
       END;
       start_call_direct (u, proc, 0, desc.ret_type);

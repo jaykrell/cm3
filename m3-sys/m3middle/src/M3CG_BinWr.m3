@@ -757,7 +757,7 @@ PROCEDURE declare_local (u: U;  n: Name;  s: ByteSize;  a: Alignment;
 
 PROCEDURE declare_param (u: U;  n: Name;  s: ByteSize;  a: Alignment;
                          t: Type;  m3t: TypeUID;  in_memory, up_level: BOOLEAN;
-                         f: Frequency): Var =
+                         f: Frequency; (* TODO *) <*UNUSED*>qid: M3CG.QID): Var =
   VAR v := NewVar (u);
   BEGIN
     Cmd   (u, Bop.declare_param);
@@ -770,6 +770,7 @@ PROCEDURE declare_param (u: U;  n: Name;  s: ByteSize;  a: Alignment;
     Bool  (u, up_level);
     Int   (u, f);
     VName (u, v);
+    (* todo qid *)
     RETURN v;
   END declare_param;
 

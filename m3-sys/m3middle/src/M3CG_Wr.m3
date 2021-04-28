@@ -785,7 +785,7 @@ PROCEDURE declare_local (u: U;  n: Name;  s: ByteSize;  a: Alignment;
 
 PROCEDURE declare_param (u: U;  n: Name;  s: ByteSize;  a: Alignment;
                          t: Type;  m3t: TypeUID;  in_memory, up_level: BOOLEAN;
-                         f: Frequency): Var =
+                         f: Frequency; qid: M3CG.QID): Var =
   VAR v := NewVar (u);
   BEGIN
     Cmd   (u, "declare_param");
@@ -799,6 +799,7 @@ PROCEDURE declare_param (u: U;  n: Name;  s: ByteSize;  a: Alignment;
     Int   (u, f);
     VName (u, v);
     NL    (u);
+    (* todo qid *)
     RETURN v;
   END declare_param;
 

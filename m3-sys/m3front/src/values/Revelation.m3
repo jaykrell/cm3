@@ -9,8 +9,8 @@
 MODULE Revelation;
 
 IMPORT M3, M3ID, Value, Type, Error, OpaqueType, Scope, Decl, Host;
-IMPORT ObjectType, RefType, Scanner, Token, Module, ValueRep, CG;
-IMPORT M3RT, Target, Reff;
+IMPORT ObjectType, RefType, Scanner, Token, Module, ValueRep;
+IMPORT M3RT, Target, Reff, CG;
 IMPORT PersistentRevelation, PersistentRevelationArraySort, PersistentRevelationSeq, PersistentRevelationSeqRep;
 FROM Scanner IMPORT GetToken, Fail, Match, MatchID, cur;
 

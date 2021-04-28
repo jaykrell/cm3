@@ -401,9 +401,9 @@ PROCEDURE declare_local (xx: T;  n: Name;  s: ByteSize;  a: Alignment;
 
 PROCEDURE declare_param (xx: T;  n: Name;  s: ByteSize;  a: Alignment;
                          t: Type;  m3t: TypeUID;  in_memory, up_level: BOOLEAN;
-                         f: Frequency): Var =
+                         f: Frequency; qid: QID): Var =
   BEGIN
-    RETURN xx.child.declare_param (n, s, a, t, m3t, in_memory, up_level, f);
+    RETURN xx.child.declare_param (n, s, a, t, m3t, in_memory, up_level, f, qid);
   END declare_param;
 
 PROCEDURE declare_temp (xx: T;  s: ByteSize;  a: Alignment;  t: Type;

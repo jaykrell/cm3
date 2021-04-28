@@ -11,7 +11,7 @@ MODULE Formal;
 IMPORT M3, M3ID, CG, Value, ValueRep, Type, Error, Expr, ProcType;
 IMPORT KeywordExpr, OpenArrayType, RefType, CheckExpr, PackedType;
 IMPORT ArrayType, ArrayExpr, SetType, Host, NarrowExpr, M3Buf, Tracer;
-IMPORT Variable, Procedure, UserProc, Target, M3RT;
+IMPORT Variable, Procedure, UserProc, Target, M3RT, NamedType;
 
 TYPE
   T = Value.T BRANDED OBJECT 
@@ -121,6 +121,7 @@ PROCEDURE EmitDeclaration (formal: Value.T;  types_only, param: BOOLEAN) =
     size     : CG.Size;
     align    : CG.Alignment;
     info     : Type.Info;
+    qid      := M3.NoQID;
   BEGIN
     IF (types_only) THEN
       type := TypeOf (t);
@@ -141,15 +142,17 @@ PROCEDURE EmitDeclaration (formal: Value.T;  types_only, param: BOOLEAN) =
         size  := Target.Address.size;
         align := Target.Address.align;
         mtype := CG.Type.Addr;
+        (* TODO qid *)
       ELSE (* lo-level pass by value. *)
         EVAL Type.CheckInfo (type, info);
         size  := info.size;
         align := info.alignment;
         mtype := info.mem_type;
+        EVAL NamedType.Split (type, qid);
       END;
       EVAL CG.Declare_param (t.name, size, align, mtype,
                              t.cg_type, in_memory := FALSE, up_level := FALSE,
-                             f := CG.Maybe);
+                             f := CG.Maybe, qid := qid);
     ELSE (* This is part of debug info for a signature. *)
       CG.Declare_formal (t.name, t.cg_type);
     END;
