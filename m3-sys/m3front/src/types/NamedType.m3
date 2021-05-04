@@ -9,12 +9,12 @@
 MODULE NamedType;
 
 IMPORT M3, M3ID, Token, Type, TypeRep, Scanner, ObjectType;
-IMPORT Error, Scope, Brand, Value, ErrType, CG;
+IMPORT Error, Scope, Brand, Value, ErrType;
 
 TYPE
   P = Type.T BRANDED "NamedType.T" OBJECT
         scope      : Scope.T;
-        qid        : M3.QID;
+        qid        := M3.NoQID;
         type       : Type.T;
         obj        : Value.T;
       OVERRIDES
@@ -70,9 +70,9 @@ PROCEDURE New (t: Type.T): Type.T =
   BEGIN
     p := NEW (P);
     TypeRep.Init (p, Type.Class.Named);
-    p.scope      := NIL;
     p.qid.module := M3ID.NoID;
     p.qid.item   := M3ID.NoID;
+    p.scope      := NIL;
     p.type       := t;
     p.obj        := NIL;
     RETURN p;

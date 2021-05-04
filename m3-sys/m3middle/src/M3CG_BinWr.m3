@@ -770,7 +770,7 @@ PROCEDURE declare_param (u: U;  n: Name;  s: ByteSize;  a: Alignment;
     Bool  (u, up_level);
     Int   (u, f);
     VName (u, v);
-    (* todo qid *)
+    (* TODO qid, though it is not used downstream so can be omitted here indefinitiely *)
     RETURN v;
   END declare_param;
 

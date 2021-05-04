@@ -796,7 +796,7 @@ PROCEDURE declare_param (VAR s: State) =
       up_lev := Scan_bool (s);
       freq   := Scan_int (s);
       v      := Scan_int (s);
-      qid    := M3CG.NoQID; (* TODO *)
+      qid    := M3CG.NoQID; (* TODO qid, though it is not used downstream so can be omitted here indefinitiely *)
   BEGIN
     AddVar (s, v, s.cg.declare_param (name, size, align, type, m3t,
                                       in_mem, up_lev, freq, qid));

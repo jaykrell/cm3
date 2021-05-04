@@ -11,7 +11,7 @@ MODULE Formal;
 IMPORT M3, M3ID, CG, Value, ValueRep, Type, Error, Expr, ProcType;
 IMPORT KeywordExpr, OpenArrayType, RefType, CheckExpr, PackedType;
 IMPORT ArrayType, ArrayExpr, SetType, Host, NarrowExpr, M3Buf, Tracer;
-IMPORT Variable, Procedure, UserProc, Target, M3RT, NamedType;
+IMPORT Variable, Procedure, UserProc, Target, M3RT;
 
 TYPE
   T = Value.T BRANDED OBJECT 
@@ -25,6 +25,7 @@ TYPE
         mode     : Mode;
         kind     : Type.Class;
         trace    : Tracer.T;
+        qid      := M3.NoQID;
         openArray: BOOLEAN;
         hasError : BOOLEAN;
       OVERRIDES
@@ -142,13 +143,11 @@ PROCEDURE EmitDeclaration (formal: Value.T;  types_only, param: BOOLEAN) =
         size  := Target.Address.size;
         align := Target.Address.align;
         mtype := CG.Type.Addr;
-        (* TODO qid *)
       ELSE (* lo-level pass by value. *)
         EVAL Type.CheckInfo (type, info);
         size  := info.size;
         align := info.alignment;
         mtype := info.mem_type;
-        EVAL NamedType.Split (type, qid);
       END;
       EVAL CG.Declare_param (t.name, size, align, mtype,
                              t.cg_type, in_memory := FALSE, up_level := FALSE,
