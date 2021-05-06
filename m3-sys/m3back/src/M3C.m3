@@ -585,19 +585,6 @@ BEGIN
     RETURN id;
 END ReplaceName;
 
-PROCEDURE QidText(qid: M3CG.QID): TEXT=
-VAR qidtext := "";
-BEGIN
-  IF qid.module # 0 THEN
-    qidtext := qidtext & NameT(qid.module);
-  END;
-  qidtext := qidtext & ".";
-  IF qid.item # 0 THEN
-    qidtext := qidtext & NameT(qid.item);
-  END;
-  RETURN qidtext;
-END QidText;
-
 PROCEDURE AnonymousCounter(self: T): INTEGER =
 BEGIN
     INC(self.anonymousCounter, 1 + ORD(self.anonymousCounter = 385)); (* avoid "i386" -- really, it happened *)
@@ -4195,7 +4182,7 @@ PROCEDURE Locals_declare_param(
     <*UNUSED*>in_memory: BOOLEAN;
     up_level: BOOLEAN;
     <*UNUSED*>frequency: Frequency;
-    qid := M3CG.NoQID): M3CG.Var =
+    typename := M3ID.NoID): M3CG.Var =
 BEGIN
     RETURN declare_param(
         self.self,
@@ -4205,7 +4192,7 @@ BEGIN
         type,
         typeid,
         up_level,
-        qid);
+        typename);
 END Locals_declare_param;
 
 PROCEDURE Locals_declare_local(
@@ -4283,9 +4270,9 @@ PROCEDURE Imports_import_procedure(
     parameter_count: INTEGER;
     return_type: CGType;
     callingConvention: CallingConvention;
-    return_type_qid := M3CG.NoQID): M3CG.Proc =
+    return_typename := M3ID.NoID): M3CG.Proc =
 BEGIN
-    RETURN import_procedure(self.self, name, parameter_count, return_type, callingConvention, return_type_qid);
+    RETURN import_procedure(self.self, name, parameter_count, return_type, callingConvention, return_typename);
 END Imports_import_procedure;
 
 PROCEDURE Imports_declare_param(
@@ -4298,7 +4285,7 @@ PROCEDURE Imports_declare_param(
     <*UNUSED*>in_memory: BOOLEAN;
     up_level: BOOLEAN;
     <*UNUSED*>frequency: Frequency;
-    qid := M3CG.NoQID): M3CG.Var =
+    typename := M3ID.NoID): M3CG.Var =
 BEGIN
     RETURN declare_param(
         self.self,
@@ -4308,7 +4295,7 @@ BEGIN
         type,
         typeid,
         up_level,
-        qid);
+        typename);
 END Imports_declare_param;
 
 PROCEDURE Imports_import_global(
@@ -4485,7 +4472,7 @@ PROCEDURE GetStructSizes_declare_param(
     <*UNUSED*>in_memory: BOOLEAN;
     <*UNUSED*>up_level: BOOLEAN;
     <*UNUSED*>frequency: Frequency;
-    <*UNUSED*>qid := M3CG.NoQID): M3CG.Var =
+    <*UNUSED*>typename := M3ID.NoID): M3CG.Var =
 BEGIN
     RETURN self.Declare(type, byte_size, alignment);
 END GetStructSizes_declare_param;
@@ -4704,7 +4691,7 @@ PROCEDURE internal_declare_param(
     typeid: TypeUID;
     up_level: BOOLEAN;
     type_text: TEXT;
-    qid := M3CG.NoQID): M3CG.Var =
+    typename := M3ID.NoID): M3CG.Var =
 VAR function := self.param_proc;
     var: Var_t := NIL;
     type: Type_t := NIL;
@@ -4715,7 +4702,7 @@ BEGIN
             & " typeid:" & TypeIDToText(typeid)
             & " up_level:" & BoolToText[up_level]
             & " type_text:" & TextOrNIL(type_text)
-            & " qid:" & QidText(qid));
+            & " typename:" & TextOrNIL(NameT(typename)));
     ELSE
         self.comment("internal_declare_param");
     END;
@@ -4772,7 +4759,7 @@ declare_param(
     type: CGType;
     typeid: TypeUID;
     up_level: BOOLEAN;
-    qid := M3CG.NoQID): M3CG.Var =
+    typename := M3ID.NoID): M3CG.Var =
 BEGIN
     IF self.param_proc = NIL THEN
         RETURN NIL;
@@ -4786,7 +4773,7 @@ BEGIN
         typeid,
         up_level,
         NIL,
-        qid);
+        typename);
 END declare_param;
 
 PROCEDURE
@@ -5225,7 +5212,7 @@ END Segments_init_float;
 PROCEDURE import_procedure(
     self: T; name: Name; parameter_count: INTEGER;
     return_type: CGType; callingConvention: CallingConvention;
-    return_type_qid := M3CG.NoQID): M3CG.Proc =
+    return_typename := M3ID.NoID): M3CG.Proc =
 VAR proc := NEW(Proc_t, name := name, parameter_count := parameter_count,
                 return_type := return_type, imported := TRUE,
                 callingConvention := callingConvention).Init(self);
@@ -5234,7 +5221,7 @@ BEGIN
         self.comment("import_procedure name:" & NameT(name)
             & " parameter_count:" & IntToDec(parameter_count)
             & " return_type:" & cgtypeToText[return_type]
-            & " return_type_qid:" & QidText(return_type_qid));
+            & " return_typename:" & TextOrNIL(NameT(return_typename)));
     ELSE
         self.comment("import_procedure");
     END;

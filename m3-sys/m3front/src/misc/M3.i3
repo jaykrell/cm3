@@ -16,8 +16,9 @@ IMPORT M3ID, M3Buf, Jmpbufs, M3CG;
 TYPE
   Flag = BITS 1 FOR BOOLEAN;
 
-  QID  = M3CG.QID; (* module qualified name *)
-  CONST NoQID = M3CG.NoQID;
+  (* an optionally module qualified name *)
+  QID  = RECORD module, item: M3ID.T; END;
+  CONST NoQID = QID {M3ID.NoID, M3ID.NoID};
 
 (*------------------------------------------------------------- AST nodes ---*)
 

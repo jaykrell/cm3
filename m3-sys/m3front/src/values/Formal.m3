@@ -151,9 +151,12 @@ PROCEDURE EmitDeclaration (formal: Value.T;  types_only, param: BOOLEAN) =
         mtype := info.mem_type;
         qid   := t.qid;
       END;
+
+      o := Scope.LookUpQID (p.scope, p.qid);
+
       EVAL CG.Declare_param (t.name, size, align, mtype,
                              t.cg_type, in_memory := FALSE, up_level := FALSE,
-                             f := CG.Maybe, qid := qid);
+                             f := CG.Maybe, typename := M3ID.Add (Value.GlobalName (qid)));
     ELSE (* This is part of debug info for a signature. *)
       CG.Declare_formal (t.name, t.cg_type);
     END;

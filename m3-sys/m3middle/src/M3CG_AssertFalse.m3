@@ -1,7 +1,6 @@
 MODULE M3CG_AssertFalse;
 
-IMPORT M3CG, M3CG_Ops;
-IMPORT Target;
+IMPORT M3CG, M3CG_Ops, Target, M3ID;
 FROM M3CG IMPORT Name, ByteOffset, TypeUID, CallingConvention;
 FROM M3CG IMPORT BitSize, ByteSize, Alignment, Frequency;
 FROM M3CG IMPORT Var, Proc, Label, Sign, BitOffset;
@@ -196,7 +195,7 @@ AssertFalse();
 RETURN NIL;
 END declare_local;
 
-<*NOWARN*>PROCEDURE declare_param(self: T; name: Name; byte_size: ByteSize; alignment: Alignment; type: Type; typeid: TypeUID; in_memory, up_level: BOOLEAN; frequency: Frequency; qid := M3CG.NoQID): Var =
+<*NOWARN*>PROCEDURE declare_param(self: T; name: Name; byte_size: ByteSize; alignment: Alignment; type: Type; typeid: TypeUID; in_memory, up_level: BOOLEAN; frequency: Frequency; typename := M3ID.NoID): Var =
 BEGIN
 AssertFalse();
 RETURN NIL;
@@ -208,7 +207,7 @@ AssertFalse();
 RETURN NIL;
 END declare_temp;
 
-<*NOWARN*>PROCEDURE import_procedure(self: T; name: Name; n_params: INTEGER; ret_type: Type; callingConvention: CallingConvention; return_type_qid := M3CG.NoQID): Proc =
+<*NOWARN*>PROCEDURE import_procedure(self: T; name: Name; n_params: INTEGER; ret_type: Type; callingConvention: CallingConvention; return_typename := M3ID.NoID): Proc =
 BEGIN
 AssertFalse();
 RETURN NIL;

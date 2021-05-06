@@ -400,7 +400,7 @@ PROCEDURE ImportProc (p: T;  name: TEXT;  n_formals: INTEGER;
     <*ASSERT p.cg_proc = NIL*>
     p.next_cg_proc := cg_procs;  cg_procs := p;
     p.cg_proc := CG.Import_procedure (M3ID.Add (name), n_formals,
-                                      cg_result, cc, new, return_type_qid);
+                                      cg_result, cc, new, M3ID.Add (Value.GlobalName (return_type_qid)));
     IF (new) THEN
       (* declare the formals *)
       IF (p.syms # NIL) THEN

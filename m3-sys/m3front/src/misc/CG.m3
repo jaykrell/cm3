@@ -492,10 +492,10 @@ PROCEDURE Declare_local (n: Name;  s: Size;  a: Alignment;  t: Type;
 
 PROCEDURE Declare_param (n: Name;  s: Size;  a: Alignment;  t: Type;
                          m3t: TypeUID;  in_memory, up_level: BOOLEAN;
-                         f: Frequency; qid := M3CG.NoQID): Var =
+                         f: Frequency; typename := M3ID.NoID): Var =
   BEGIN
     RETURN cg.declare_param (n, ToVarSize (s, a), ByteAlign (a),
-                             t, m3t, in_memory, up_level, f, qid);
+                             t, m3t, in_memory, up_level, f, typename);
   END Declare_param;
 
 (*----------------------------------------------------------- temporaries ---*)
@@ -1359,12 +1359,12 @@ PROCEDURE EmitText (t: TEXT;  is_const: BOOLEAN): INTEGER =
 PROCEDURE Import_procedure (n: Name;  n_params: INTEGER;  ret_type: Type;
                             cc: CallingConvention;
                             VAR(*OUT*) new: BOOLEAN;
-                            return_type_qid := M3CG.NoQID): Proc =
+                            return_typename := M3ID.NoID): Proc =
   VAR ref: REFANY;  p: Proc;
   BEGIN
     IF (procedures = NIL) THEN procedures := NewNameTbl() END;
     IF procedures.get (n, ref) THEN new := FALSE;  RETURN ref END;
-    p := cg.import_procedure (n, n_params, ret_type, cc, return_type_qid);
+    p := cg.import_procedure (n, n_params, ret_type, cc, return_typename);
     EVAL procedures.put (n, p);
     new := TRUE;
     RETURN p;
