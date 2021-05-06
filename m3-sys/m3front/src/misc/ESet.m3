@@ -549,7 +549,7 @@ PROCEDURE AddFPEdges (t: T;  VAR x: M3.FPInfo;  n: CARDINAL): CARDINAL =
 
 PROCEDURE Resolve (t: T) =
   (* look up each of the named exceptions *)
-  VAR e: Elt;  o: Value.T;  save: INTEGER;
+  VAR e: Elt;  o: Value.T;  save: INTEGER; module: M3ID.T;
   BEGIN
     IF (t.resolved) THEN RETURN END;
     save := Scanner.offset;
