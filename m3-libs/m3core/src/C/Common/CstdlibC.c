@@ -16,10 +16,10 @@ extern "C" {
 typedef void (__cdecl*AtExitFunction)(void);
 
 M3WRAP1(int, atexit, AtExitFunction)
-M3WRAP1(char*, getenv, const char*)
-M3WRAP1(int, system, const char*)
-M3WRAP2(double, strtod, const char*, char**)
-M3WRAP1(double, atof, const char*)
+M3WRAP1(char*, getenv, M3_CONST char*)
+M3WRAP1(int, system, M3_CONST char*)
+M3WRAP2(double, strtod, M3_CONST char*, char**)
+M3WRAP1(double, atof, M3_CONST char*)
 
 M3WRAP_RETURN_VOID(Cstdlib__abort, abort, (void), ())
 M3WRAP_RETURN_VOID(Cstdlib__exit, exit, (int status), (status))

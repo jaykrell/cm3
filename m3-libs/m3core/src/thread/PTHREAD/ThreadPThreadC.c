@@ -344,7 +344,7 @@ ThreadPThread__GetActivation(void)
 
 #endif
 
-typedef int (*generic_init_t)(void *, const void *);
+typedef int (*generic_init_t)(void *, M3_CONST void *);
 
 void *
 __cdecl

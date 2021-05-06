@@ -22,6 +22,14 @@ struct IRpcStubBuffer;   /* warning 4115: named type definition in parentheses *
 #define DECLPSPEC_SELECTANY
 #endif
 
+// When concatenating m3core.h + hand written C + m3c output, const does not surive m3c.
+// So const is optional, or perhaps just off.
+#ifndef M3_CONST
+#define M3_CONST /* nothing */
+#endif
+
+// TODO The combination of declspec(selectany) and not-const is not portable to older compilers.
+
 #ifdef __cplusplus
 extern "C" {
 #endif

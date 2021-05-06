@@ -16,7 +16,7 @@ extern "C" {
 
 /*------------------------------- byte copying ------------------------------*/
 
-void __cdecl RTMisc__Copy(const void* src, void* dest, WORD_T len)
+void __cdecl RTMisc__Copy(M3_CONST void* src, void* dest, WORD_T len)
 {
     memmove(dest, src, len);
 }

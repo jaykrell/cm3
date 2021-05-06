@@ -63,14 +63,14 @@ typedef int m3_exec_t;
 #endif
 
 #ifdef _WIN32
-M3WRAP2_(m3_exec_t, execv, const char*, char const*const*)
-M3WRAP2_(m3_exec_t, execvp, const char*, char const*const*)
-M3WRAP3_(m3_exec_t, execve, const char*, char const*const*, char const*const*)
+M3WRAP2_(m3_exec_t, execv, M3_CONST char*, char M3_CONST*M3_CONST*)
+M3WRAP2_(m3_exec_t, execvp, M3_CONST char*, char M3_CONST*M3_CONST*)
+M3WRAP3_(m3_exec_t, execve, M3_CONST char*, char M3_CONST*M3_CONST*, char M3_CONST*M3_CONST*)
 #else
 M3WRAP3(m3_pid_t, waitpid, m3_pid_t, int*, int)
-M3WRAP2(m3_exec_t, execv, const char*, char**)
-M3WRAP2(m3_exec_t, execvp, const char*, char**)
-M3WRAP3(m3_exec_t, execve, const char*, char**, char**)
+M3WRAP2(m3_exec_t, execv, M3_CONST char*, char**)
+M3WRAP2(m3_exec_t, execvp, M3_CONST char*, char**)
+M3WRAP3(m3_exec_t, execve, M3_CONST char*, char**, char**)
 #endif
 
 #ifdef __cplusplus

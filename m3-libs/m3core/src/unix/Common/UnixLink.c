@@ -23,7 +23,7 @@ extern "C"
 #endif
 
 M3_DLL_EXPORT int __cdecl
-Unix__link(const char* ExistingFile, const char* NewLink)
+Unix__link(M3_CONST char* ExistingFile, M3_CONST char* NewLink)
 {
 #ifdef _WIN32
     if (CreateHardLinkA(NewLink, ExistingFile, NULL) == FALSE)

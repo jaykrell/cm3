@@ -74,7 +74,7 @@ static int __cdecl m3stat_from_stat(int result, m3_stat_t* m3st, struct stat* st
 M3_DLL_EXPORT
 int
 __cdecl
-Ustat__stat(const char* path, m3_stat_t* m3st)
+Ustat__stat(M3_CONST char* path, m3_stat_t* m3st)
 {
     struct stat st;
     return m3stat_from_stat(stat(path, &st), m3st, &st);
@@ -83,7 +83,7 @@ Ustat__stat(const char* path, m3_stat_t* m3st)
 M3_DLL_EXPORT
 int
 __cdecl
-Ustat__lstat(const char* path, m3_stat_t* m3st)
+Ustat__lstat(M3_CONST char* path, m3_stat_t* m3st)
 {
     struct stat st;
     return m3stat_from_stat(lstat(path, &st), m3st, &st);
@@ -100,7 +100,7 @@ Ustat__fstat(int fd, m3_stat_t* m3st)
 
 #ifdef HAS_STAT_FLAGS
 
-M3WRAP2(int, chflags, const char*, unsigned long)
+M3WRAP2(int, chflags, M3_CONST char*, unsigned long)
 M3WRAP2(int, fchflags, int, unsigned long)
 
 #endif

@@ -1,6 +1,12 @@
 #include <windows.h>
 #include <windowsx.h>
 
+// When concatenating m3core.h + hand written C + m3c output, const does not survive m3c.
+// So const is optional, or perhaps just off.
+#ifndef M3_CONST
+#define M3_CONST /* nothing */
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -15,7 +21,7 @@ WinGDI__MAKEPOINTS(LPARAM lParam, POINTS* points) // s is for 16bit signed short
 
 LPARAM
 __cdecl
-WinGDI__PointsToLParam(const POINTS* points) // s is for 16bit signed short, not plural
+WinGDI__PointsToLParam(M3_CONST POINTS* points) // s is for 16bit signed short, not plural
 // This is not in windows.h but follows from previous.
 // LPARAM is more aligned than points so use union,
 // instead of *(LPARAM*)points. LPARAM is size_t. POINTS is shorts.

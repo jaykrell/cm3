@@ -87,7 +87,7 @@ enum Trace_t
 size_t traceInit /* = Trace_C */;
 
 void
-RTIO__PutString(const char* a);
+RTIO__PutString(M3_CONST char* a);
 
 void
 RTIO__PutText(Text_t* a);

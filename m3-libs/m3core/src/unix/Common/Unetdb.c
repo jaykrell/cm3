@@ -44,14 +44,14 @@ static m3_hostent_t* native_to_m3hostent(const struct hostent* native, m3_hosten
 }
 
 M3_DLL_EXPORT m3_hostent_t* __cdecl
-Unetdb__gethostbyname(const char* name, m3_hostent_t* m3)
+Unetdb__gethostbyname(M3_CONST char* name, m3_hostent_t* m3)
 {
     Scheduler__DisableSwitching();
     return native_to_m3hostent(gethostbyname(name), m3);
 }
 
 M3_DLL_EXPORT m3_hostent_t* __cdecl
-Unetdb__gethostbyaddr(const char* addr, int len, int type, m3_hostent_t* m3)
+Unetdb__gethostbyaddr(M3_CONST char* addr, int len, int type, m3_hostent_t* m3)
 {
     Scheduler__DisableSwitching();
     return native_to_m3hostent(gethostbyaddr(addr, len, type), m3);

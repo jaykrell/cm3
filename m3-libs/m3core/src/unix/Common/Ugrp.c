@@ -54,7 +54,7 @@ Ugrp__getgrgid(m3_group_t* m3group, m3_gid_t gid)
 }
 
 M3_DLL_EXPORT m3_group_t* __cdecl
-Ugrp__getgrnam(m3_group_t* m3group, const char* name)
+Ugrp__getgrnam(m3_group_t* m3group, M3_CONST char* name)
 {
     Scheduler__DisableSwitching();
     return native_to_m3group(getgrnam(name), m3group);

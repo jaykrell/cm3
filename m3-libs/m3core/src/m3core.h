@@ -8,6 +8,19 @@
 #ifndef INCLUDED_M3CORE_H
 #define INCLUDED_M3CORE_H
 
+// When concatenating m3core.h + hand written C + m3c output, const does not survive m3c.
+// So const is optional, or perhaps just off.
+//
+// Some of this is deficiency in m3c, i.e. ignoring READONLY, which can translate to const.
+// But some is also Modula-3 language deficiency, i.e. no notion of "variables" that
+// are declared constant in .i3 and initialized/constant in .m3.
+//
+// Possibly things like Uerror should be functions due to Windows dynamic linking requiring
+// decorating imported data with declspec(dllimport) but functions not needing that.
+#ifndef M3_CONST
+#define M3_CONST /* nothing */
+#endif
+
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif
@@ -495,11 +508,11 @@ struct _m3_stat_t;
 typedef struct _m3_stat_t m3_stat_t;
 
 int __cdecl Ustat__fstat(int fd, m3_stat_t* m3st);
-int __cdecl Ustat__lstat(const char* path, m3_stat_t* m3st);
-int __cdecl Ustat__stat(const char* path, m3_stat_t* m3st);
+int __cdecl Ustat__lstat(M3_CONST char* path, m3_stat_t* m3st);
+int __cdecl Ustat__stat(M3_CONST char* path, m3_stat_t* m3st);
 #ifdef HAS_STAT_FLAGS
 int __cdecl Ustat__fchflags(int fd, unsigned long flags);
-int __cdecl Ustat__chflags(const char* path, unsigned long flags);
+int __cdecl Ustat__chflags(M3_CONST char* path, unsigned long flags);
 #endif
 
 /*
@@ -528,9 +541,9 @@ typedef struct {
 int __cdecl Usocket__listen(int s, int backlog);
 int __cdecl Usocket__shutdown(int s, int how);
 int __cdecl Usocket__socket(int af, int type, int protocol);
-int __cdecl Usocket__bind(int s, const M3SockAddrUnionAll*, m3_socklen_t);
-int __cdecl Usocket__connect(int s, const M3SockAddrUnionAll*, m3_socklen_t);
-INTEGER __cdecl Usocket__sendto(int s, void* msg, WORD_T length, int flags, const M3SockAddrUnionAll*, m3_socklen_t);
+int __cdecl Usocket__bind(int s, M3_CONST M3SockAddrUnionAll*, m3_socklen_t);
+int __cdecl Usocket__connect(int s, M3_CONST M3SockAddrUnionAll*, m3_socklen_t);
+INTEGER __cdecl Usocket__sendto(int s, void* msg, WORD_T length, int flags, M3_CONST M3SockAddrUnionAll*, m3_socklen_t);
 int __cdecl Usocket__setsockopt(int s, int level, int optname, void* optval, m3_socklen_t len);
 int __cdecl Usocket__getpeername(int s, M3SockAddrUnionAll*, m3_socklen_t*);
 int __cdecl Usocket__getsockname(int s, M3SockAddrUnionAll*, m3_socklen_t*);
@@ -539,7 +552,7 @@ int __cdecl Usocket__getsockopt(int s, int level, int optname, void* optval, m3_
 INTEGER __cdecl Usocket__recvfrom(int s, void* buf, WORD_T len, int flags, M3SockAddrUnionAll*, m3_socklen_t*);
 
 #ifndef _WIN32
-DIR* __cdecl Udir__opendir(const char* a);
+DIR* __cdecl Udir__opendir(M3_CONST char* a);
 #endif
 
 // char* (caddr_t) instead of void* for default Solaris
@@ -552,7 +565,7 @@ typedef INT64 m3_time64_t;
 
 #ifndef _WIN32
 m3_time64_t __cdecl Utime__time(m3_time64_t* tloc);
-char* __cdecl Utime__ctime(const m3_time64_t* m);
+char* __cdecl Utime__ctime(M3_CONST m3_time64_t* m);
 #endif
 void __cdecl Utime__tzset(void);
 
@@ -573,21 +586,21 @@ void __cdecl Utime__tzset(void);
 void __cdecl Unix__Assertions(void);
 void __cdecl Usocket__Assertions(void);
 
-int __cdecl Unix__open(const char* path, int flags, m3_mode_t mode);
-int __cdecl Unix__mkdir(const char* path, m3_mode_t mode);
+int __cdecl Unix__open(M3_CONST char* path, int flags, m3_mode_t mode);
+int __cdecl Unix__mkdir(M3_CONST char* path, m3_mode_t mode);
 int __cdecl Unix__ftruncate(int fd, m3_off_t length);
 m3_off_t __cdecl Unix__lseek(int fd, m3_off_t offset, int whence);
 m3_off_t __cdecl Unix__tell(int fd);
 int __cdecl Unix__fcntl(int fd, INTEGER request, void* arg);
 int __cdecl Unix__ioctl(int fd, INTEGER request, void* argp);
-int __cdecl Unix__mknod(const char* path, m3_mode_t mode, m3_dev_t dev);
+int __cdecl Unix__mknod(M3_CONST char* path, m3_mode_t mode, m3_dev_t dev);
 m3_mode_t __cdecl Unix__umask(m3_mode_t newmask);
 
 struct _m3_hostent_t;
 typedef struct _m3_hostent_t m3_hostent_t;
 
-m3_hostent_t* __cdecl Unetdb__gethostbyname(const char* name, m3_hostent_t* m3);
-m3_hostent_t* __cdecl Unetdb__gethostbyaddr(const char* addr, int len, int type, m3_hostent_t* m3);
+m3_hostent_t* __cdecl Unetdb__gethostbyname(M3_CONST char* name, m3_hostent_t* m3);
+m3_hostent_t* __cdecl Unetdb__gethostbyaddr(M3_CONST char* addr, int len, int type, m3_hostent_t* m3);
 
 
 struct _m3_group_t;
@@ -595,17 +608,17 @@ typedef struct _m3_group_t m3_group_t;
 
 m3_group_t* __cdecl Ugrp__getgrent(m3_group_t* m3group);
 m3_group_t* __cdecl Ugrp__getgrgid(m3_group_t* m3group, m3_gid_t gid);
-m3_group_t* __cdecl Ugrp__getgrnam(m3_group_t* m3group, const char* name);
+m3_group_t* __cdecl Ugrp__getgrnam(m3_group_t* m3group, M3_CONST char* name);
 void __cdecl Ugrp__setgrent(void);
 void __cdecl Ugrp__endgrent(void);
 
 
-int __cdecl Unix__link(const char* name1, const char* name2);
-int __cdecl Unix__chmod(const char* path, m3_mode_t mode);
+int __cdecl Unix__link(M3_CONST char* name1, M3_CONST char* name2);
+int __cdecl Unix__chmod(M3_CONST char* path, m3_mode_t mode);
 int __cdecl Unix__fchmod(int fd, m3_mode_t mode);
-int __cdecl Unix__chown(const char* path, m3_uid_t owner, m3_gid_t group);
+int __cdecl Unix__chown(M3_CONST char* path, m3_uid_t owner, m3_gid_t group);
 int __cdecl Unix__fchown(int fd, m3_uid_t owner, m3_gid_t group);
-int __cdecl Unix__creat(const char* path, m3_mode_t mode);
+int __cdecl Unix__creat(M3_CONST char* path, m3_mode_t mode);
 int __cdecl Unix__dup(int oldd);
 
 UINT32 __cdecl Uin__ntohl(UINT32 x);
@@ -613,21 +626,21 @@ UINT16 __cdecl Uin__ntohs(UINT16 x);
 UINT32 __cdecl Uin__htonl(UINT32 x);
 UINT16 __cdecl Uin__htons(UINT16 x);
 
-const char*
+M3_CONST char*
 __cdecl
 M3toC__SharedTtoS(TEXT);
 
 void
 __cdecl
-M3toC__FreeSharedS(TEXT, const char*);
+M3toC__FreeSharedS(TEXT, M3_CONST char*);
 
 TEXT
 __cdecl
-M3toC__CopyStoT(const char*);
+M3toC__CopyStoT(M3_CONST char*);
 
 TEXT
 __cdecl
-M3toC__StoT(const char*);
+M3toC__StoT(M3_CONST char*);
 
 /* This MUST match DatePosix.i3.T.
  * The fields are ordered by size and alphabetically.
@@ -657,11 +670,11 @@ DatePosix__FromTime(double t, INTEGER zone, m3core_DatePosix_T* date);
 
 double
 __cdecl
-DatePosix__ToTime(/*const*/ m3core_DatePosix_T* date);
+DatePosix__ToTime(M3_CONST m3core_DatePosix_T* date);
 
 void
 __cdecl
-DatePosix__TypeCheck(/*const*/ m3core_DatePosix_T* d, WORD_T sizeof_DateT);
+DatePosix__TypeCheck(M3_CONST m3core_DatePosix_T* d, WORD_T sizeof_DateT);
 
 void
 __cdecl

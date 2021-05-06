@@ -86,18 +86,18 @@ Unix__Assertions(void)
     Usocket__Assertions();
 }
 
-M3WRAP3_(int, open, const char*, int, m3_mode_t)
+M3WRAP3_(int, open, M3_CONST char*, int, m3_mode_t)
 M3WRAP1_(m3_mode_t, umask, m3_mode_t)
-M3WRAP2_(int, chmod, const char*, m3_mode_t)
-M3WRAP2_(int, creat, const char*, m3_mode_t)
+M3WRAP2_(int, chmod, M3_CONST char*, m3_mode_t)
+M3WRAP2_(int, creat, M3_CONST char*, m3_mode_t)
 M3WRAP1_(int, dup, int)
-M3WRAP1(int, system, const char*)
+M3WRAP1(int, system, M3_CONST char*)
 M3WRAP1_(int, isatty, int)
-M3WRAP2(int, rename, const char*, const char*)
-M3WRAP1_(int, rmdir, const char*)
-M3WRAP1_(int, unlink, const char*)
-M3WRAP2_(int, access, const char*, int)
-M3WRAP1_(int, chdir, const char*)
+M3WRAP2(int, rename, M3_CONST char*, M3_CONST char*)
+M3WRAP1_(int, rmdir, M3_CONST char*)
+M3WRAP1_(int, unlink, M3_CONST char*)
+M3WRAP2_(int, access, M3_CONST char*, int)
+M3WRAP1_(int, chdir, M3_CONST char*)
 M3WRAP1_(int, close, int)
 M3WRAP2_(int, dup2, int, int)
 
@@ -106,22 +106,22 @@ M3WRAP1(m3_off_t, tell, int)
 #endif
 
 #ifndef _WIN32
-M3WRAP3(int, chown, const char*, m3_uid_t, m3_gid_t)
+M3WRAP3(int, chown, M3_CONST char*, m3_uid_t, m3_gid_t)
 M3WRAP3(int, fchown, int, m3_uid_t, m3_gid_t)
-M3WRAP2(int, truncate, const char*, m3_off_t)
+M3WRAP2(int, truncate, M3_CONST char*, m3_off_t)
 M3WRAP2(int, ftruncate, int, m3_off_t)
-M3WRAP3(INTEGER, readlink, const char*, char*, INTEGER)
-M3WRAP2(int, symlink, const char*, const char*)
+M3WRAP3(INTEGER, readlink, M3_CONST char*, char*, INTEGER)
+M3WRAP2(int, symlink, M3_CONST char*, M3_CONST char*)
 M3WRAP1(int, fsync, int)
 M3WRAP0(int, getdtablesize)
 M3WRAP0(int, getpagesize)
 #if 0 /* deprecated, errors on MacOSX 10.10.4 Yosemite, worked on 10.5.8. */
 M3WRAP1(void*, sbrk, INTEGER)
 #endif
-M3WRAP3(int, execve, const char*, char**, char**)
+M3WRAP3(int, execve, M3_CONST char*, char**, char**)
 M3WRAP1(unsigned, sleep, unsigned)
 M3WRAP3(m3_off_t, lseek, int, m3_off_t, int)
-M3WRAP2(int, mkdir, const char*, m3_mode_t)
+M3WRAP2(int, mkdir, M3_CONST char*, m3_mode_t)
 M3WRAP1(int, pipe, int*)
 M3WRAP2(int, gethostname, char*, WORD_T)
 M3WRAP2(char*, getcwd, char*, WORD_T)
@@ -129,7 +129,7 @@ M3WRAP2(char*, getcwd, char*, WORD_T)
 #ifndef __vms
 
 M3WRAP2(int, fchmod, int, m3_mode_t)
-M3WRAP3(int, mknod, const char*, m3_mode_t, m3_dev_t)
+M3WRAP3(int, mknod, M3_CONST char*, m3_mode_t, m3_dev_t)
 
 #if 0 /* See RTProcess.Fork. */
 M3_DLL_EXPORT m3_pid_t __cdecl
@@ -182,7 +182,7 @@ Unix__gethostname(char* name, WORD_T len)
 #endif
 
 M3_DLL_EXPORT int __cdecl
-Unix__mkdir(const char* path, m3_mode_t mode)
+Unix__mkdir(M3_CONST char* path, m3_mode_t mode)
 {
     return _mkdir(path);
 }

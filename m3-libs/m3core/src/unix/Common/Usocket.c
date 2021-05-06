@@ -330,7 +330,7 @@ Usocket__Assertions(void)
 M3WRAP2(int, listen, int, int)
 M3WRAP2(int, shutdown, int, int)
 M3WRAP3(int, socket, int, int, int)
-M3WRAP4(INTEGER, send, int, const void*, WORD_T, int)
+M3WRAP4(INTEGER, send, int, M3_CONST void*, WORD_T, int)
 M3WRAP4(INTEGER, recv, int, void*, WORD_T, int)
 
 // wrap everything taking input socklen_t or sockaddr
@@ -375,7 +375,7 @@ M3WRAP4(INTEGER, recv, int, void*, WORD_T, int)
     return result;
 
 M3_DLL_EXPORT int __cdecl
-Usocket__bind(int s, const M3SockAddrUnionAll* pm3_sockaddr, m3_socklen_t len)
+Usocket__bind(int s, M3_CONST M3SockAddrUnionAll* pm3_sockaddr, m3_socklen_t len)
 {
     WRAP_SOCKADDR_INPUT1
 
@@ -385,7 +385,7 @@ Usocket__bind(int s, const M3SockAddrUnionAll* pm3_sockaddr, m3_socklen_t len)
 }
 
 M3_DLL_EXPORT int __cdecl
-Usocket__connect(int s, const M3SockAddrUnionAll* pm3_sockaddr, m3_socklen_t len)
+Usocket__connect(int s, M3_CONST M3SockAddrUnionAll* pm3_sockaddr, m3_socklen_t len)
 {
     WRAP_SOCKADDR_INPUT1
 
@@ -395,7 +395,7 @@ Usocket__connect(int s, const M3SockAddrUnionAll* pm3_sockaddr, m3_socklen_t len
 }
 
 M3_DLL_EXPORT INTEGER __cdecl
-Usocket__sendto(int s, void* msg, WORD_T length, int flags, const M3SockAddrUnionAll* pm3_sockaddr, m3_socklen_t len)
+Usocket__sendto(int s, void* msg, WORD_T length, int flags, M3_CONST M3SockAddrUnionAll* pm3_sockaddr, m3_socklen_t len)
 {
     WRAP_SOCKADDR_INPUT1
 
@@ -554,7 +554,7 @@ INTEGER
 __cdecl
 Usocket__bind_un(
     int fd,
-    const char* path)
+    M3_CONST char* path)
 {
     sockaddr_un addr;
     return Usocket__un(&addr, path) ? -1 : bind(fd, (sockaddr*)&addr, sizeof(addr));
@@ -565,7 +565,7 @@ INTEGER
 __cdecl
 Usocket__connect_un(
     int fd,
-    const char* path)
+    M3_CONST char* path)
 {
     sockaddr_un addr;
     return Usocket__un(&addr, path) ? -1 : connect(fd, (sockaddr*)&addr, sizeof(addr));

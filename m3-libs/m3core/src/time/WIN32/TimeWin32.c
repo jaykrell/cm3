@@ -28,7 +28,7 @@ TimeWin32__ToFileTime(double t, FILETIME * ft)
 
 double
 __cdecl
-TimeWin32__FromFileTime(const FILETIME * ft)
+TimeWin32__FromFileTime(M3_CONST FILETIME * ft)
 {
     LARGE_INTEGER li;
 
