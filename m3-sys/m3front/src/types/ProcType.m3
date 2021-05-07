@@ -6,12 +6,15 @@
 (* Last modified on Tue May 23 15:25:57 PDT 1995 by kalsow     *)
 (*      modified on Thu Dec  5 17:23:39 PST 1991 by muller     *)
 
-MODULE ProcType;
+UNSAFE MODULE ProcType;
 
 IMPORT M3, M3ID, CG, Expr, Type, TypeRep, Value, Scope, Target;
 IMPORT Formal, UserProc, Token, Ident, CallExpr, Word, Error, NamedType;
-IMPORT ESet, TipeMap, TipeDesc, ErrType, M3Buf, Variable, OpenArrayType;
+IMPORT ESet, TipeMap, TipeDesc, ErrType, M3Buf, Variable, OpenArrayType, RTIO;
+IMPORT RTParams;
 FROM Scanner IMPORT Match, GetToken, cur;
+
+VAR debug := FALSE;
 
 TYPE
   P = Type.T BRANDED "ProcType.T" OBJECT
@@ -54,6 +57,14 @@ PROCEDURE ParseSignature (name: M3ID.T;  cc: CG.CallingConvention): Type.T =
   TYPE  TK = Token.T;
   VAR   p: P;
   BEGIN
+    IF debug THEN
+      RTIO.PutText("ParseSignature ");
+      IF name # 0 THEN
+        RTIO.PutText(M3ID.ToText(name));
+      END;
+      RTIO.PutText("\n");
+      RTIO.Flush();
+    END;
     p := Create (Scope.PushNew (FALSE, name));
     p.callConv := cc;
     Match (TK.tLPAREN);
@@ -66,6 +77,7 @@ PROCEDURE ParseSignature (name: M3ID.T;  cc: CG.CallingConvention): Type.T =
     IF (cur.token = TK.tCOLON) THEN
       GetToken (); (* : *)
       p.result := Type.Parse ();
+      (*Type.Typename (p.result, p.result_typename);*)
     END;
     IF (cur.token = TK.tRAISES) THEN
       p.raises := ESet.ParseRaises ();
@@ -104,6 +116,16 @@ PROCEDURE ParseFormal (p: P;  ) =
     IF (cur.token = TK.tCOLON) THEN
       GetToken (); (* : *)
       formal.type := Type.Parse ();
+      (*Type.Typename (formal.type, formal.type.info.name);*)
+      Type.Typename (formal.type, formal.typename);
+      IF debug THEN
+        RTIO.PutText("formal.type.info.name formal.type:");
+        RTIO.PutAddr(LOOPHOLE(formal.type, ADDRESS));
+        RTIO.PutText(" ");
+        RTIO.PutInt(formal.type.info.name.item);
+        RTIO.PutText("\n");
+        RTIO.Flush();
+      END;
     END;
     IF (cur.token = TK.tEQUAL) THEN
       Error.Msg ("default value must begin with \':=\'");
@@ -153,6 +175,14 @@ PROCEDURE MethodSigAsProcSig (sig, objType: Type.T): Type.T =
     formal.offset := 0;
     formal.mode   := Formal.Mode.mVALUE;
     formal.type   := objType;
+
+    IF debug THEN
+      RTIO.PutText("MethodSigAsProcSig:");
+      RTIO.PutAddr(LOOPHOLE(objType, ADDRESS));
+      RTIO.PutText("\n");
+      RTIO.Flush();
+    END;
+
     formal.dfault := NIL;
     formal.trace  := NIL;
     formal.unused := FALSE;
@@ -528,4 +558,5 @@ PROCEDURE FPrinter (p: P;  VAR x: M3.FPInfo) =
   END FPrinter;
 
 BEGIN
+  debug := RTParams.IsPresent("m3front-debug-proctype");
 END ProcType.

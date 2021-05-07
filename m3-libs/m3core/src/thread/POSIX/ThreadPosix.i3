@@ -2,12 +2,15 @@
 (* All rights reserved.                                        *)
 (* See the file COPYRIGHT for a full description.              *)
 
-INTERFACE ThreadPosix;
+UNSAFE INTERFACE ThreadPosix;
 
 FROM Thread IMPORT Alerted;
 FROM Ctypes IMPORT int;
 
 TYPE SignalHandler1 = PROCEDURE(signo: int) RAISES {Alerted};
+
+TYPE Context = RECORD END;
+TYPE ContextPtr = UNTRACED REF Context;
 
 <*EXTERNAL ThreadPosix__setup_sigvtalrm*>
 PROCEDURE setup_sigvtalrm(handler: SignalHandler1);
@@ -22,17 +25,17 @@ PROCEDURE allow_othersigs();
 PROCEDURE disallow_signals();
 
 <*EXTERNAL ThreadPosix__MakeContext*>
-PROCEDURE MakeContext(p: PROCEDURE(); size: CARDINAL): ADDRESS;
+PROCEDURE MakeContext(p: PROCEDURE(); size: CARDINAL): ContextPtr;
 
 <*EXTERNAL ThreadPosix__SwapContext*>
-PROCEDURE SwapContext(from, to: ADDRESS);
+PROCEDURE SwapContext(from, to: ContextPtr);
 
 <*EXTERNAL ThreadPosix__DisposeContext*>
-PROCEDURE DisposeContext(VAR c: ADDRESS);
+PROCEDURE DisposeContext(VAR c: ContextPtr);
 
 <*EXTERNAL ThreadPosix__ProcessContext*>
-PROCEDURE ProcessContext(c, bottom, top: ADDRESS;
-                         p: PROCEDURE(start, limit: ADDRESS));
+PROCEDURE ProcessContext(c, bottom, top: ContextPtr;
+                         p: PROCEDURE(start, limit: ContextPtr));
 
 (*---------------------------------------------------------------------------*)
 

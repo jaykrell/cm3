@@ -8,7 +8,7 @@
 
 INTERFACE Formal;
 
-IMPORT M3ID, Type, Value, Expr, Tracer;
+IMPORT M3ID, Type, Value, Expr, Tracer, M3;
 
 TYPE Mode = {mVALUE, mVAR, mREADONLY};
 

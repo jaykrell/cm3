@@ -6,12 +6,15 @@
 (* Last modified on Tue May 23 15:42:16 PDT 1995 by kalsow     *)
 (*      modified on Fri Nov  9 20:39:07 1990 by muller         *)
 
-MODULE Formal;
+UNSAFE MODULE Formal;
 
 IMPORT M3, M3ID, CG, Value, ValueRep, Type, Error, Expr, ProcType;
 IMPORT KeywordExpr, OpenArrayType, RefType, CheckExpr, PackedType;
 IMPORT ArrayType, ArrayExpr, SetType, Host, NarrowExpr, M3Buf, Tracer;
-IMPORT Variable, Procedure, UserProc, Target, M3RT, NamedType;
+IMPORT Variable, Procedure, UserProc, Target, M3RT;
+IMPORT RTIO, RTParams, TypeRep;
+
+VAR debug := FALSE;
 
 TYPE
   T = Value.T BRANDED OBJECT 
@@ -85,13 +88,36 @@ PROCEDURE New (READONLY info: Info): Value.T =
     t.unused   := info.unused;
     t.kind     := Type.Class.Error;
     t.trace    := info.trace;
+
+    IF debug THEN
+      RTIO.PutText("Formal.New:");
+      RTIO.PutAddr(LOOPHOLE(t, ADDRESS));
+
+      RTIO.PutText(" type:");
+      RTIO.PutAddr(LOOPHOLE(t.type, ADDRESS));
+
+      RTIO.PutText(" name:");
+      IF t.name # 0 THEN
+        RTIO.PutText(M3ID.ToText(t.name));
+      END;
+
+      RTIO.PutText(" qid:");
+      IF t.qid.item # 0 THEN
+        RTIO.PutText(M3ID.ToText(t.qid.item));
+      END;
+      RTIO.PutText("\n");
+      RTIO.Flush();
+    END;
+
     RETURN t;
   END New;
 
 (*EXPORTED*)
 PROCEDURE Split (formal: Value.T;  VAR info: Info) =
   VAR t: T := formal;
+      type1 := t.type;
   BEGIN
+
     info.name   := t.name;
     info.offset := t.offset;
     info.mode   := t.mode;
@@ -99,6 +125,32 @@ PROCEDURE Split (formal: Value.T;  VAR info: Info) =
     info.dfault := t.dfault;
     info.unused := t.unused;
     info.trace  := t.trace;
+    info.typename := t.typename;
+
+    IF debug THEN
+      RTIO.PutText("Formal.Split:");
+      RTIO.PutAddr(LOOPHOLE(t, ADDRESS));
+
+      RTIO.PutText(" name:");
+      IF t.name # 0 THEN
+        RTIO.PutText(M3ID.ToText(t.name));
+      END;
+
+      RTIO.PutText(" type1:");
+      RTIO.PutAddr(LOOPHOLE(type1, ADDRESS));
+
+      RTIO.PutText(" type2:");
+      RTIO.PutAddr(LOOPHOLE(info.type, ADDRESS));
+
+      RTIO.PutText(" typename:");
+      IF info.typename.item # 0 THEN
+        RTIO.PutText(M3ID.ToText(info.typename.item));
+      END;
+
+      RTIO.PutText("\n");
+      RTIO.Flush();
+    END;
+
   END Split;
 
 (*EXPORTED*)
@@ -111,8 +163,10 @@ PROCEDURE EmitDeclaration (formal: Value.T;  types_only, param: BOOLEAN) =
     align    : CG.Alignment;
     info     : Type.Info;
     typename := M3.NoQID;
+    trace     := 0;
   BEGIN
     IF (types_only) THEN
+      trace := trace * 10 + 1;
       Compile (t);
       t.cg_type := Type.GlobalUID (TypeOf (t));
       IF t.mode # Mode.mVALUE OR t.openArray
@@ -120,23 +174,49 @@ PROCEDURE EmitDeclaration (formal: Value.T;  types_only, param: BOOLEAN) =
         t.cg_type := CG.Declare_indirect (t.cg_type);
       END;
     ELSIF (param) THEN
+      trace := trace * 10 + 2;
       IF t.mode # Mode.mVALUE OR t.openArray
       THEN (* lo-level pass by reference. *)
+        trace := trace * 10 + 3;
         size  := Target.Address.size;
         align := Target.Address.align;
         mtype := CG.Type.Addr;
         (* TODO typename *)
       ELSE (* lo-level pass by value. *)
+        trace := trace * 10 + 4;
         EVAL Type.CheckInfo (TypeOf (t), info);
         size  := info.size;
         align := info.alignment;
         mtype := info.mem_type;
         Type.Typename (OriginalTypeOf (t), typename);
       END;
+
+      IF debug THEN
+        RTIO.PutText("Formal.EmitDeclaration Declare_param type:");
+        RTIO.PutAddr(LOOPHOLE(type, ADDRESS));
+        RTIO.PutText(" trace:");
+        RTIO.PutInt(trace);
+        RTIO.PutText(" name:");
+        RTIO.PutText(M3ID.ToText(t.name));
+        RTIO.PutText(" type.info.typename.item:");
+        RTIO.PutInt(type.info.typename.item);
+        RTIO.PutText("\n");
+        RTIO.Flush();
+>>>>>>> e287bff7a... m3core: Work on making m3c output agree with m3core's .h/.c
+      END;
+
       EVAL CG.Declare_param (t.name, size, align, mtype,
                              t.cg_type, in_memory := FALSE, up_level := FALSE,
                              f := CG.Maybe, typename := typename);
     ELSE (* This is part of debug info for a signature. *)
+
+      IF debug THEN
+        RTIO.PutText("Formal.EmitDeclaration Declare_formal name:");
+        RTIO.PutText(M3ID.ToText(t.name));
+        RTIO.PutText("\n");
+        RTIO.Flush();
+      END;
+
       CG.Declare_formal (t.name, t.cg_type);
     END;
   END EmitDeclaration;
@@ -1190,4 +1270,5 @@ PROCEDURE GenCopy (type: Type.T) =
   END GenCopy;
 
 BEGIN
+  debug := RTParams.IsPresent("m3front-debug-formal");
 END Formal.

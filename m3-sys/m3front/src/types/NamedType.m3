@@ -6,10 +6,13 @@
 (* Last modified on Tue Jul 19 10:05:49 PDT 1994 by kalsow     *)
 (*      modified on Fri Dec 21 01:25:25 1990 by muller         *)
 
-MODULE NamedType;
+UNSAFE MODULE NamedType;
 
 IMPORT M3, M3ID, Token, Type, TypeRep, Scanner, ObjectType;
 IMPORT Error, Scope, Brand, Value, ErrType;
+IMPORT RTIO, RTParams;
+
+VAR debug := FALSE;
 
 TYPE
   P = Type.T BRANDED "NamedType.T" OBJECT
@@ -32,6 +35,7 @@ TYPE
 PROCEDURE Parse (): Type.T =
   TYPE TK = Token.T;
   VAR p: P;  t: Type.T;
+      case := 0;
   BEGIN
     IF (Scanner.cur.token = TK.tIDENT)
       AND (Scanner.cur.defn # NIL)
@@ -39,7 +43,9 @@ PROCEDURE Parse (): Type.T =
       (* this identifier is reserved! *)
       t := Value.ToType (Scanner.cur.defn);
       Scanner.GetToken (); (* IDENT *)
+      case := 1;
     ELSE
+      case := 2;
       (* this is a non-reserved ID *)
       p := NEW (P);
       TypeRep.Init (p, Type.Class.Named);
@@ -52,12 +58,26 @@ PROCEDURE Parse (): Type.T =
       END;
       t := p;
     END;
+
+    case := case * 10;
  
     IF (Scanner.cur.token = TK.tBRANDED) THEN
+      case := case + 1;
       t := ObjectType.Parse (t, FALSE, Brand.Parse ());
     ELSIF (Scanner.cur.token = TK.tOBJECT) THEN
+      case := case + 2;
       t := ObjectType.Parse (t, FALSE, NIL);
     END;
+
+    IF debug THEN
+      RTIO.PutText("NamedType.Parse:");
+      RTIO.PutAddr(LOOPHOLE(t, ADDRESS));
+      RTIO.PutText(" ");
+      RTIO.PutInt(case);
+      RTIO.PutText("\n");
+      RTIO.Flush();
+    END;
+
     RETURN t;
   END Parse;
 
@@ -93,7 +113,8 @@ PROCEDURE Split (t: Type.T;  VAR name: M3.QID): BOOLEAN =
   BEGIN
     IF (p = NIL) THEN RETURN FALSE END;
     Resolve (p);
-    name := p.info.name;
+    name := p.info.name; (* todo *)
+    name := t.info.name;
     RETURN TRUE;
   END Split;
 
@@ -116,7 +137,7 @@ PROCEDURE Resolve (p: P) =
       IF (o = NIL) THEN
         save := Scanner.offset;
         Scanner.offset := p.origin;
-        Error.QID (t.info.name, "undefined");
+        Error.QID (p.info.name, "undefined");
         Scanner.offset := save;
         t := ErrType.T;
       ELSIF (Value.ClassOf (o) = Value.Class.Type) THEN
@@ -124,7 +145,7 @@ PROCEDURE Resolve (p: P) =
       ELSE
         save := Scanner.offset;
         Scanner.offset := p.origin;
-        Error.QID (t.info.name, "name isn\'t bound to a type");
+        Error.QID (p.info.name, "name isn\'t bound to a type");
         Scanner.offset := save;
         t := ErrType.T;
       END;
@@ -209,4 +230,5 @@ PROCEDURE FPrinter (p: P;  VAR x: M3.FPInfo) =
   END FPrinter;
 
 BEGIN
+  debug := RTParams.IsPresent("m3front-debug-namedtype");
 END NamedType.

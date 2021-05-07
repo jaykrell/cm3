@@ -6,12 +6,15 @@
 (* Last modified on Tue May 23 15:26:35 PDT 1995 by kalsow     *)
 (*      modified on Thu Dec  5 17:20:18 PST 1991 by muller     *)
 
-MODULE RefType;
+UNSAFE MODULE RefType;
 
 IMPORT M3, M3ID, CG, Token, Type, TypeRep, Scanner, ObjectType, Target;
 IMPORT Null, Reff, Addr, Error, Module, M3Buf, Brand;
 IMPORT Revelation, OpenArrayType, TipeMap, TipeDesc, TypeFP;
 IMPORT ProcType, ObjectAdr, Word, M3RT;
+IMPORT RTIO, RTParams;
+
+VAR debug := FALSE;
 
 TYPE
   P = Type.T BRANDED "RefType.T"OBJECT
@@ -75,6 +78,16 @@ PROCEDURE New (target: Type.T;  traced: BOOLEAN;  brand: Brand.T): Type.T =
     p.brand      := brand;
     p.target     := target;
     p.user_name  := NIL;
+
+    IF debug THEN
+      RTIO.PutText ("RefType.New:");
+      RTIO.PutAddr (LOOPHOLE(p, ADDRESS));
+      RTIO.PutText (" target:");
+      RTIO.PutAddr (LOOPHOLE(target, ADDRESS));
+      RTIO.PutText ("\n");
+      RTIO.Flush ();
+    END;
+
     RETURN p;
   END New;
 
@@ -402,4 +415,5 @@ PROCEDURE FPrinter (p: P;  VAR x: M3.FPInfo) =
   END FPrinter;
 
 BEGIN
+  debug := RTParams.IsPresent("m3front-debug-reftype");
 END RefType.

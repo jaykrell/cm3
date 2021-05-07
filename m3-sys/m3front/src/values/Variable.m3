@@ -7,7 +7,7 @@
 (*      Modified On Thu Jun 15 12:45:02 PDT 1995 By ericv      *)
 (*      Modified On Thu Dec  5 17:21:40 PST 1991 By muller     *)
 
-MODULE Variable;
+UNSAFE MODULE Variable;
 (* Including formal parameters. *)
 
 IMPORT M3, M3ID, CG, Value, ValueRep, Error, RunTyme;
@@ -16,7 +16,10 @@ IMPORT Target, TInt, Token, Ident, Module, CallExpr;
 IMPORT Decl, Null, Int, LInt, Fmt, Procedure, Tracer;
 IMPORT Expr, IntegerExpr, ArrayExpr, TextExpr, NamedExpr;
 IMPORT Type, OpenArrayType, ErrType, TipeMap;
+IMPORT RTIO, RTParams, TypeRep;
 FROM Scanner IMPORT GetToken, Match, cur;
+
+VAR debug := FALSE;
 
 CONST
   Big_Local = 8192; (* x Target.Char.size *)
@@ -26,6 +29,7 @@ CONST
 REVEAL
   T = Value.T BRANDED "Variable.T" OBJECT
         tipe        : Type.T;
+        typename    := M3.NoQID;
         repType     : Type.T;
         initExpr    : Expr.T;
         qualName    : TEXT;
@@ -226,6 +230,30 @@ PROCEDURE NewFormal (formal: Value.T;  name: M3ID.T): T =
     IF (NOT t.indirect) AND (OpenArrayType.Is (t.tipe)) THEN
       t.indirect := TRUE;
     END;
+    t.typename  := f_info.qid; (* todo rename typename *)
+
+    IF debug THEN
+      RTIO.PutText("NewFormal type:");
+      RTIO.PutAddr(LOOPHOLE(t.tipe, ADDRESS));
+      RTIO.PutText(" name:");
+      IF name # 0 THEN
+        RTIO.PutText(M3ID.ToText(name));
+      END;
+
+      RTIO.PutText(" formalqid:");
+      IF f_info.qid.item # 0 THEN
+        RTIO.PutText(M3ID.ToText(f_info.qid.item));
+      END;
+   
+      RTIO.PutText(" typeqid:");
+      IF t.tipe.info.qid.item # 0 THEN
+        RTIO.PutText(M3ID.ToText(t.tipe.info.qid.item));
+      END;
+
+      RTIO.PutText("\n");
+      RTIO.Flush();
+    END;
+
     t.trace := NIL;  (* the caller must call BindTrace after the variable
                         is inserted into a scope *)
     RETURN t;
@@ -304,6 +332,7 @@ PROCEDURE RepTypeOf (t: T): Type.T =
 PROCEDURE Check (t: T;  VAR cs: Value.CheckState) =
   VAR dfault: Expr.T;  min, max: Target.Int;  info: Type.Info;  refType: Type.T;
   BEGIN
+    Type.QID (TypeOf (t), t.typename);
     t.tipe := Type.CheckInfo (TypeOf (t), info);
     t.repType := Type.Check (Type.StripPacked (t.tipe));
     t.size     := info.size;
@@ -570,6 +599,7 @@ PROCEDURE Declare (t: T): BOOLEAN =
     is_struct  := Type.IsStructured (t.tipe);
     externName : TEXT;
     externM3ID : M3ID.T;
+    qid        := M3.NoQID;
   BEGIN
     Type.Compile (t.tipe);
 
@@ -629,6 +659,22 @@ PROCEDURE Declare (t: T): BOOLEAN =
       (* formal passed by reference => param is an address *)
       t.cg_align := t.align;
       t.nextTWACGVar := TsWCGVars;  TsWCGVars := t;
+
+      Type.QID (t.tipe, qid);
+
+      IF debug THEN
+        RTIO.PutText("Variable.Declare indirect param type:");
+        RTIO.PutAddr(LOOPHOLE(t.tipe, ADDRESS));
+        RTIO.PutText(" name:");
+        IF t.name # 0 THEN
+          RTIO.PutText(M3ID.ToText(t.name));
+        END;
+        RTIO.PutText(" qid:");
+        RTIO.PutInt(qid.item);
+        RTIO.PutText("\n");
+        RTIO.Flush();
+      END;
+
       t.cg_var := CG.Declare_param (t.name, size, align, mtype, typeUID,
                                     t.need_addr, t.up_level, CG.Maybe);
 
@@ -637,8 +683,22 @@ PROCEDURE Declare (t: T): BOOLEAN =
       (** align := FindAlignment (align, size); **)
       t.cg_align := align;
       t.nextTWACGVar := TsWCGVars;  TsWCGVars := t;
+
+      IF debug THEN
+        RTIO.PutText("Variable.Declare param type:");
+        RTIO.PutAddr(LOOPHOLE(t.tipe, ADDRESS));
+        RTIO.PutText(" name:");
+        IF t.name # 0 THEN
+          RTIO.PutText(M3ID.ToText(t.name));
+        END;
+        RTIO.PutText(" qid:");
+        RTIO.PutInt(qid.item);
+        RTIO.PutText("\n");
+        RTIO.Flush();
+      END;
+
       t.cg_var := CG.Declare_param (t.name, size, align, mtype, typeUID,
-                                    t.need_addr, t.up_level, CG.Maybe);
+                                    t.need_addr, t.up_level, CG.Maybe, t.typename);
     END;
 
     RETURN TRUE;
@@ -1062,4 +1122,5 @@ PROCEDURE ScheduleTrace (t: T) =
   END ScheduleTrace;
 
 BEGIN
+  debug := RTParams.IsPresent("m3front-debug-variable");
 END Variable.

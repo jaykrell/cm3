@@ -18,7 +18,7 @@ TYPE
   T = BRANDED "Revelation.T" REF RECORD
         home    : Value.T; (* the containing interface or module *)
         env     : Scope.T;
-        qid     : M3.QID;
+        qid     := M3.NoQID;
         obj     : Value.T; (* value named by 'qid' in scope 'env' *)
         rhs     : Type.T;  (* REVEAL qid (<:|=) rhs *)
         lhs     : Type.T;  (* == type that corresponds to qid *)
