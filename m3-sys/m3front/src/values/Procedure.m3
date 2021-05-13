@@ -486,7 +486,7 @@ PROCEDURE Declarer (p: T): BOOLEAN =
         RETURN FALSE;
       ELSE
         (* it's an imported procedure *)
-        ImportProc (p, name, n_formals, cg_result, ProcType.ResultTypename (p.signature), cconv);
+        ImportProc (p, name, n_formals, cg_result, ProcType.ResultQid (p.signature), cconv);
         RETURN TRUE;
       END;
     END;
@@ -497,7 +497,8 @@ PROCEDURE Declarer (p: T): BOOLEAN =
     p.cg_proc := CG.Declare_procedure (M3ID.Add (name),
                     n_formals, cg_result, p.body.level,  cconv,
                     exported := (p.exported OR p.imported),
-                    parent := parent, return_typename := ProcType.ResultTypename (p.signature));
+                    parent := parent,
+                    return_typename := ProcType.ResultTypename (p.signature));
     p.body.cg_proc := p.cg_proc;
     Scanner.offset := p.origin;
     IF (p.syms # NIL) THEN

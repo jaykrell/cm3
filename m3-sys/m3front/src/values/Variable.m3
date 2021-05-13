@@ -280,6 +280,8 @@ PROCEDURE Check (t: T;  VAR cs: Value.CheckState) =
   VAR dfault: Expr.T;  min, max: Target.Int;  info: Type.Info;  refType: Type.T;
       type: Type.T := NIL;
   BEGIN
+    (* Capture typename before type gets reduced and loses NamedType. *)
+    Type.Typename (TypeOf (t), t.typename);
     type := Type.CheckInfo (TypeOf (t), info);
     t.repType  := Type.Check (Type.StripPacked (type));
     t.size     := info.size;
