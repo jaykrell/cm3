@@ -11,7 +11,7 @@ MODULE Formal;
 IMPORT M3, M3ID, CG, Value, ValueRep, Type, Error, Expr, ProcType;
 IMPORT KeywordExpr, OpenArrayType, RefType, CheckExpr, PackedType;
 IMPORT ArrayType, ArrayExpr, SetType, Host, NarrowExpr, M3Buf, Tracer;
-IMPORT Variable, Procedure, UserProc, Target, M3RT, NamedType;
+IMPORT Variable, Procedure, UserProc, Target, M3RT;
 
 TYPE
   T = Value.T BRANDED OBJECT 
@@ -20,7 +20,7 @@ TYPE
         repType  : Type.T;
         dfault   : Expr.T;
         refType  : Type.T; (* Needed to copy an open array. *)
-        qid      := M3.NoQID;
+        typename := M3.NoQID; (* Capture typename out of NamedType before it is lowered. *)
         tempCGVal: CG.Val;
         cg_type  : CG.TypeUID;
         mode     : Mode;
@@ -102,13 +102,14 @@ PROCEDURE New (READONLY info: Info): Value.T =
 PROCEDURE Split (formal: Value.T;  VAR info: Info) =
   VAR t: T := formal;
   BEGIN
-    info.name   := t.name;
-    info.offset := t.offset;
-    info.mode   := t.mode;
-    info.type   := TypeOf (t);
-    info.dfault := t.dfault;
-    info.unused := t.unused;
-    info.trace  := t.trace;
+    info.name     := t.name;
+    info.offset   := t.offset;
+    info.mode     := t.mode;
+    info.type     := TypeOf (t);
+    info.dfault   := t.dfault;
+    info.unused   := t.unused;
+    info.trace    := t.trace;
+    info.typename := t.typename;
   END Split;
 
 (*EXPORTED*)
@@ -122,7 +123,7 @@ PROCEDURE EmitDeclaration (formal: Value.T;  types_only, param: BOOLEAN) =
     size     : CG.Size;
     align    : CG.Alignment;
     info     : Type.Info;
-    qid      := M3.NoQID;
+    typename := M3.NoQID;
   BEGIN
     IF (types_only) THEN
       type := TypeOf (t);
@@ -143,17 +144,17 @@ PROCEDURE EmitDeclaration (formal: Value.T;  types_only, param: BOOLEAN) =
         size  := Target.Address.size;
         align := Target.Address.align;
         mtype := CG.Type.Addr;
-        (* TODO qid *)
+        (* TODO typename *)
       ELSE (* lo-level pass by value. *)
         EVAL Type.CheckInfo (type, info);
-        size  := info.size;
-        align := info.alignment;
-        mtype := info.mem_type;
-        qid   := t.qid;
+        size     := info.size;
+        align    := info.alignment;
+        mtype    := info.mem_type;
+        typename := t.typename;
       END;
       EVAL CG.Declare_param (t.name, size, align, mtype,
                              t.cg_type, in_memory := FALSE, up_level := FALSE,
-                             f := CG.Maybe, qid := qid);
+                             f := CG.Maybe, qid := typename);
     ELSE (* This is part of debug info for a signature. *)
       CG.Declare_formal (t.name, t.cg_type);
     END;
@@ -208,8 +209,7 @@ PROCEDURE Check (t: T;  VAR cs: Value.CheckState) =
 (* Only checks on the formal itself. *)
   VAR info: Type.Info;
   BEGIN
-    (* Capture qid before type gets reduced and loses NamedType. *)
-    Type.QID (TypeOf (t), t.qid);
+    Type.QID (TypeOf (t), t.typename); (* Capture typename out of NamedType before it is lowered. *)
     t.tipe := Type.CheckInfo (TypeOf (t), info);
     t.repType := Type.StripPacked (t.tipe);
     EVAL Type.Check (t.repType);

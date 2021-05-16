@@ -26,6 +26,7 @@ CONST
 REVEAL
   T = Value.T BRANDED "Variable.T" OBJECT
         tipe        : Type.T;
+        typename    := M3.NoQID; (* Capture typename out of NamedType before it is lowered. *)
         repType     : Type.T;
         initExpr    : Expr.T;
         qualName    : TEXT;
@@ -221,6 +222,7 @@ PROCEDURE NewFormal (formal: Value.T;  name: M3ID.T): T =
     t.readonly := (f_info.mode = Formal.Mode.mREADONLY);
     t.unused   := f_info.unused;
     t.initDone := TRUE;
+    t.typename := f_info.typename;
 (* REVIEW^ can this be right? *) 
     t.imported := FALSE; (* in spite of Module.depth *)
     IF (NOT t.indirect) AND (OpenArrayType.Is (t.tipe)) THEN
@@ -304,6 +306,7 @@ PROCEDURE RepTypeOf (t: T): Type.T =
 PROCEDURE Check (t: T;  VAR cs: Value.CheckState) =
   VAR dfault: Expr.T;  min, max: Target.Int;  info: Type.Info;  refType: Type.T;
   BEGIN
+    Type.QID (TypeOf (t), t.typename); (* Capture typename before tipe:NamedType is lowered. *)
     t.tipe := Type.CheckInfo (TypeOf (t), info);
     t.repType := Type.Check (Type.StripPacked (t.tipe));
     t.size     := info.size;
@@ -638,7 +641,7 @@ PROCEDURE Declare (t: T): BOOLEAN =
       t.cg_align := align;
       t.nextTWACGVar := TsWCGVars;  TsWCGVars := t;
       t.cg_var := CG.Declare_param (t.name, size, align, mtype, typeUID,
-                                    t.need_addr, t.up_level, CG.Maybe);
+                                    t.need_addr, t.up_level, CG.Maybe, t.typename);
     END;
 
     RETURN TRUE;

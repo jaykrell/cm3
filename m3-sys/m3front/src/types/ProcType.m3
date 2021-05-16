@@ -9,7 +9,7 @@
 MODULE ProcType;
 
 IMPORT M3, M3ID, CG, Expr, Type, TypeRep, Value, Scope, Target;
-IMPORT Formal, UserProc, Token, Ident, CallExpr, Word, Error, NamedType;
+IMPORT Formal, UserProc, Token, Ident, CallExpr, Word, Error;
 IMPORT ESet, TipeMap, TipeDesc, ErrType, M3Buf, Variable, OpenArrayType;
 FROM Scanner IMPORT Match, GetToken, cur;
 
@@ -104,6 +104,7 @@ PROCEDURE ParseFormal (p: P;  ) =
     IF (cur.token = TK.tCOLON) THEN
       GetToken (); (* : *)
       formal.type := Type.Parse ();
+      (*Type.QID (formal.type, formal.typename);*)
     END;
     IF (cur.token = TK.tEQUAL) THEN
       Error.Msg ("default value must begin with \':=\'");
@@ -380,6 +381,7 @@ PROCEDURE Result (t: Type.T): Type.T =
 PROCEDURE ResultQid (t: Type.T): M3.QID =
   VAR p := Reduce (t);
   BEGIN
+    Type.Compile (t);
     IF (p # NIL)
       THEN RETURN p.result_qid;
       ELSE RETURN M3.NoQID;

@@ -8,19 +8,20 @@
 
 INTERFACE Formal;
 
-IMPORT M3ID, Type, Value, Expr, Tracer;
+IMPORT M3ID, Type, Value, Expr, Tracer, M3;
 
 TYPE Mode = {mVALUE, mVAR, mREADONLY};
 
 TYPE
   Info = RECORD
-    name   : M3ID.T;
-    mode   : Mode;
-    offset : INTEGER;
-    type   : Type.T;
-    dfault : Expr.T;
-    unused : BOOLEAN;
-    trace  : Tracer.T;
+    name     : M3ID.T;
+    mode     : Mode;
+    offset   : INTEGER;
+    type     : Type.T;
+    dfault   : Expr.T;
+    unused   : BOOLEAN;
+    trace    : Tracer.T;
+    typename := M3.NoQID; (* Capture typename out of NamedType before it is lowered. *)
   END;
 
 PROCEDURE New (READONLY info: Info): Value.T;
