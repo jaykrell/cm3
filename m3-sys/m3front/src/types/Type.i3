@@ -35,7 +35,7 @@ TYPE
     addr_align: INTEGER := Target.Word8.align;
     (* ^When stk_type = CG.Type.Addr, the alignment of dereferenced location. *)
     hash      : INTEGER;  (* internal hash code *)
-    name      := M3ID.NoID;
+    name      := M3.NoQID;
     stk_type  : CG.Type;  (* code generator representation on operator stack *)
     mem_type  : CG.Type;  (* code generator representation as a variable *)
     class     : Class;

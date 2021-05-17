@@ -15,7 +15,7 @@ IMPORT Scope, AssignStmt, Formal, M3RT, M3String;
 IMPORT Target, TInt, Token, Ident, Module, CallExpr;
 IMPORT Decl, Null, Int, LInt, Fmt, Procedure, Tracer;
 IMPORT Expr, IntegerExpr, ArrayExpr, TextExpr, NamedExpr;
-IMPORT Type, OpenArrayType, ErrType, TipeMap;
+IMPORT Type, OpenArrayType, ErrType, TipeMap, TypeRep;
 FROM Scanner IMPORT GetToken, Match, cur;
 
 CONST
@@ -26,6 +26,7 @@ CONST
 REVEAL
   T = Value.T BRANDED "Variable.T" OBJECT
         tipe        : Type.T;
+        typename    := M3.NoQID;
         repType     : Type.T;
         initExpr    : Expr.T;
         qualName    : TEXT;
@@ -304,6 +305,9 @@ PROCEDURE RepTypeOf (t: T): Type.T =
 PROCEDURE Check (t: T;  VAR cs: Value.CheckState) =
   VAR dfault: Expr.T;  min, max: Target.Int;  info: Type.Info;  refType: Type.T;
   BEGIN
+    IF t.typename.item = M3ID.NoID THEN
+      t.typename := TypeOf (t).info.name;
+    END;
     t.tipe := Type.CheckInfo (TypeOf (t), info);
     t.repType := Type.Check (Type.StripPacked (t.tipe));
     t.size     := info.size;
@@ -638,7 +642,7 @@ PROCEDURE Declare (t: T): BOOLEAN =
       t.cg_align := align;
       t.nextTWACGVar := TsWCGVars;  TsWCGVars := t;
       t.cg_var := CG.Declare_param (t.name, size, align, mtype, typeUID,
-                                    t.need_addr, t.up_level, CG.Maybe);
+                                    t.need_addr, t.up_level, CG.Maybe, qid := t.typename);
     END;
 
     RETURN TRUE;

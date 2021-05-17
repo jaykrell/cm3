@@ -8,7 +8,7 @@
 
 INTERFACE Formal;
 
-IMPORT M3ID, Type, Value, Expr, Tracer;
+IMPORT M3ID, Type, Value, Expr, Tracer, M3;
 
 TYPE Mode = {mVALUE, mVAR, mREADONLY};
 
@@ -21,6 +21,7 @@ TYPE
     dfault : Expr.T;
     unused : BOOLEAN;
     trace  : Tracer.T;
+    typename := M3.NoQID;
   END;
 
 PROCEDURE New (READONLY info: Info): Value.T;

@@ -9,7 +9,7 @@
 MODULE ProcType;
 
 IMPORT M3, M3ID, CG, Expr, Type, TypeRep, Value, Scope, Target;
-IMPORT Formal, UserProc, Token, Ident, CallExpr, Word, Error, NamedType;
+IMPORT Formal, UserProc, Token, Ident, CallExpr, Word, Error;
 IMPORT ESet, TipeMap, TipeDesc, ErrType, M3Buf, Variable, OpenArrayType;
 FROM Scanner IMPORT Match, GetToken, cur;
 
@@ -21,7 +21,7 @@ TYPE
         result     : Type.T;
         raises     : ESet.T;
         callConv   : CG.CallingConvention;
-        result_qid := M3.NoQID;
+        result_typename := M3.NoQID; (* capture before result is lowered *)
       OVERRIDES
         check      := Check;
         no_straddle:= TypeRep.AddrNoStraddle;
@@ -66,6 +66,7 @@ PROCEDURE ParseSignature (name: M3ID.T;  cc: CG.CallingConvention): Type.T =
     IF (cur.token = TK.tCOLON) THEN
       GetToken (); (* : *)
       p.result := Type.Parse ();
+      Type.QID (p.result, p.result_typename);
     END;
     IF (cur.token = TK.tRAISES) THEN
       p.raises := ESet.ParseRaises ();
@@ -104,6 +105,7 @@ PROCEDURE ParseFormal (p: P;  ) =
     IF (cur.token = TK.tCOLON) THEN
       GetToken (); (* : *)
       formal.type := Type.Parse ();
+      Type.QID (formal.type, formal.typename);
     END;
     IF (cur.token = TK.tEQUAL) THEN
       Error.Msg ("default value must begin with \':=\'");
@@ -226,7 +228,7 @@ PROCEDURE Check (p: P) =
       p.checked := TRUE;
       Scope.TypeCheck (p.formals, cs);
       IF (p.result # NIL) THEN
-        Type.QID (p.result, p.result_qid);
+        Type.QID (p.result, p.result_typename); (* capture before result is lowered *)
         p.result := Type.Check (p.result);
         IF OpenArrayType.Is (p.result) THEN
           Error.Msg ("procedures may not return open arrays");
@@ -377,14 +379,14 @@ PROCEDURE Result (t: Type.T): Type.T =
     END;
   END Result;
 
-PROCEDURE ResultQid (t: Type.T): M3.QID =
+PROCEDURE ResultTypename (t: Type.T): M3.QID =
   VAR p := Reduce (t);
   BEGIN
     IF (p # NIL)
-      THEN RETURN p.result_qid;
+      THEN RETURN p.result_typename;
       ELSE RETURN M3.NoQID;
     END;
-  END ResultQid;
+  END ResultTypename;
 
 PROCEDURE CGResult (t: Type.T): CG.Type =
   VAR p := Reduce (t);
