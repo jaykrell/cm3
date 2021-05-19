@@ -14,7 +14,7 @@ FROM M3CG_Ops IMPORT ErrorHandler;
 IMPORT M3CG_MultiPass, M3CG_DoNothing, M3CG_Binary, RTIO;
 IMPORT CharSeq, CharSeqRep;
 FROM M3CC IMPORT IntToDec, IntToHex, UIntToHex, INT32;
-IMPORT TextSetDef;
+IMPORT TextSetDef, Fmt;
 CONST NameT = M3ID.ToText;
 
 (* 
@@ -58,6 +58,7 @@ T = M3CG_DoNothing.T OBJECT
         imported_procs: RefSeq.T := NIL; (*TODO*) (* Proc_t *)
         declared_procs: RefSeq.T := NIL; (*TODO*) (* Proc_t *)
         procs_pending_output: RefSeq.T := NIL; (*TODO*) (* Proc_t *)
+        typenames: IntRefTbl.T := NIL;
         typeidToType: IntRefTbl.T := NIL;
         pendingTypes: RefSeq.T := NIL; (* Type_t *)
         temp_vars: REF ARRAY OF Var_t := NIL; (* for check_* to avoid double evaluation, and pop_static_link *)
@@ -708,7 +709,6 @@ BEGIN
    * Gradually all types should be qidtext and never just CG.
    * Historically the other way around: There was only CG and no qid.
    *)
-  qidtext := NIL;
   IF qidtext # NIL THEN
     IF NOT self.typedef_defined.insert(qidtext) THEN
       ifndef(self, qidtext);
@@ -907,6 +907,7 @@ BEGIN
       ifndef (self, ref.text);
       star_or_space := " ";
       end_of_line := ";"; (* endif includes newline *)
+    type.points_to_type.ForwardDeclare(self);
     ELSE
       (* Equivalent pointers typedefs can be output multiple times; ignore typedef_defined *)
       star_or_space := "*";
@@ -2384,6 +2385,7 @@ END print;
 PROCEDURE NewInternal (cfile: Wr.T): T =
 VAR self := NEW (T);
 BEGIN
+    self.typenames := NEW(SortedIntRefTbl.Default).init();
     self.typeidToType := NEW(SortedIntRefTbl.Default).init(); (* FUTURE? *)
     self.multipass := NEW(Multipass_t).Init();
     self.multipass.reuse_refs := TRUE; (* TODO: change them all to integers *)
@@ -2700,9 +2702,9 @@ END set_source_line;
 
 (*------------------------------------------- debugging type declarations ---*)
 
-PROCEDURE declare_typename(declareType: DeclareTypes_t; typeid: TypeUID; name: Name) =
+PROCEDURE declare_typename(declareTypes: DeclareTypes_t; typeid: TypeUID; name: Name) =
 VAR nameText := NameT(name);
-    self := declareType.self;
+    self := declareTypes.self;
 BEGIN
   IF DebugVerbose(self) THEN
     self.comment("declare_typename typeid:", TypeIDToText(typeid), " name:" & nameText);
@@ -2711,7 +2713,13 @@ BEGIN
   END;
   (* nameText := self.unique & nameText; *) (* unique ends with underscore *)
   TextToId (nameText);
-  (* typename is like pointer but without the star and without a hash in the name *)
+  (* typename is like pointer but without the star and without a hash in the name
+   * typenames must be typedefed as soon as possible, as type users might
+   * have the hash and not the name; however we do not wish to create
+   * stub types ahead of time (not enough info? too invasive on the code?)
+   * therefore we have another lookup mechanism for typedefs
+   *)
+  (*self.typenames.put (typeid, NEW (Typename (typeid := typeid, name := name)));*)
   self.Type_Init (NEW (Pointer_t,
                        text := nameText,
                        typename := TRUE,
@@ -3371,7 +3379,7 @@ VAR var := NEW(Var_t,
     text: TEXT := NIL;
     length := 0;
 BEGIN
-    self.comment("declare_segment name:" & TextOrNIL(NameT(name))
+    self.comment("declare_segment name:" & Fmt.Int(name) & "(" & TextOrNIL(NameT(name)) & ")"
         & " typeid:" & TypeIDToText(typeid)
         & " const:" & BoolToText[const]);
 
@@ -4560,6 +4568,7 @@ BEGIN
     IF var.type_text # NIL THEN
         RETURN " /* Var_Type1 */ " & var.type_text;
     END;
+    (* Eventually the later forms should go away. *)
     IF var.cgtype # CGType.Struct THEN
         RETURN " /* Var_Type2 */ " & cgtypeToText[var.cgtype];
     END;

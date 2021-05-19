@@ -1360,7 +1360,7 @@ PROCEDURE EmitText (t: TEXT;  is_const: BOOLEAN): INTEGER =
 PROCEDURE Import_procedure (n: Name;  n_params: INTEGER;  ret_type: Type;
                             cc: CallingConvention;
                             VAR(*OUT*) new: BOOLEAN;
-                            return_typeid: TypeUID := 0;
+                            return_typeid: TypeUID;
                             return_typename: QID): Proc =
   VAR ref: REFANY;  p: Proc;
   BEGIN

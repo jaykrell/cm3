@@ -12,7 +12,7 @@ IMPORT M3, M3ID, CG, Expr, Type, TypeRep, Value, Scope, Target;
 IMPORT Formal, UserProc, Token, Ident, CallExpr, Word, Error;
 IMPORT ESet, TipeMap, TipeDesc, ErrType, M3Buf, Variable, OpenArrayType;
 FROM Scanner IMPORT Match, GetToken, cur;
-FROM M3CG IMPORT QID, NoQID;
+FROM M3CG IMPORT TypeUID, NoQID;
 
 TYPE
   P = Type.T BRANDED "ProcType.T" OBJECT
@@ -376,6 +376,14 @@ PROCEDURE Result (t: Type.T): Type.T =
     END;
   END Result;
 
+PROCEDURE Compile (t: Type.T) =
+  VAR p: P := t;
+  BEGIN
+    Type.Compile (t);
+    Type.Compile (p.result);
+  END Compile;
+
+(*
 PROCEDURE ResultTypename (t: Type.T): QID =
   VAR p := Reduce (t);
       qid: QID;
@@ -387,6 +395,7 @@ PROCEDURE ResultTypename (t: Type.T): QID =
     END;
     RETURN qid;
   END ResultTypename;
+*)
 
 PROCEDURE CGResult (t: Type.T): CG.Type =
   VAR p := Reduce (t);
@@ -403,6 +412,25 @@ PROCEDURE CGResult (t: Type.T): CG.Type =
       RETURN CG.Type.Struct;
     END;
   END CGResult;
+
+(*
+PROCEDURE ResultTypeid (t: Type.T): TypeUID =
+  VAR p := Reduce (t);
+  BEGIN
+    IF (p = NIL) OR (p.result = NIL) THEN
+      RETURN 0;
+    ELSIF NOT LargeResult (p.result) THEN
+      RETURN Type.GlobalUID (p.result);
+    ELSIF p.callConv.standard_structs THEN
+      ( * standard_structs means there is an extra parameter, a pointer,
+       * and the underlying signature returns void * )
+      RETURN 0;
+    ELSE
+      ( * The backend handles returning structs by value. Eventually the C backend will. * )
+      RETURN Type.GlobalUID (p.result);
+    END;
+  END ResultTypeid;
+*)
 
 PROCEDURE LargeResult (t: Type.T): BOOLEAN =
   BEGIN

@@ -21,7 +21,6 @@ TYPE
         repType  : Type.T     := NIL;
         dfault   : Expr.T     := NIL;
         refType  : Type.T     := NIL; (* Needed to copy an open array. *)
-        original_type: Type.T := NIL; (* only written once, to retain NamedType *)
         tempCGVal: CG.Val     := NIL;
         cg_type  : CG.TypeUID := 0;
         mode     : Mode       := FIRST (Mode);
@@ -66,7 +65,6 @@ PROCEDURE NewBuiltin (name: TEXT;  offset: INTEGER;  type: Type.T): Value.T =
     t.offset   := offset;
     t.mode     := Mode.mVALUE;
     t.type     := type;
-    t.original_type := type;
     t.unused   := FALSE;
     t.kind     := Type.Class.Error;
     RETURN t;
@@ -81,7 +79,6 @@ PROCEDURE New (READONLY info: Info): Value.T =
     t.offset   := info.offset;
     t.mode     := info.mode;
     t.type     := info.type;
-    t.original_type := info.type;
     t.dfault   := info.dfault;
     t.unused   := info.unused;
     t.kind     := Type.Class.Error;
@@ -96,7 +93,7 @@ PROCEDURE Split (formal: Value.T;  VAR info: Info) =
     info.name   := t.name;
     info.offset := t.offset;
     info.mode   := t.mode;
-    info.type   := OriginalTypeOf (t);
+    info.type   := TypeOf (t);
     info.dfault := t.dfault;
     info.unused := t.unused;
     info.trace  := t.trace;
@@ -132,11 +129,10 @@ PROCEDURE EmitDeclaration (formal: Value.T;  types_only, param: BOOLEAN) =
         size  := info.size;
         align := info.alignment;
         mtype := info.mem_type;
-        Type.Typename (OriginalTypeOf (t), typename);
       END;
       EVAL CG.Declare_param (t.name, size, align, mtype,
                              t.cg_type, in_memory := FALSE, up_level := FALSE,
-                             f := CG.Maybe, typename := typename);
+                             f := CG.Maybe);
     ELSE (* This is part of debug info for a signature. *)
       CG.Declare_formal (t.name, t.cg_type);
     END;
@@ -175,30 +171,11 @@ PROCEDURE OpenArrayByVALUE (formal: Value.T;  VAR refType: Type.T): BOOLEAN =
 (* Externally dispatched-to: *)
 PROCEDURE TypeOf (t: T): Type.T =
   BEGIN
-    (* Type and original_type should both transition to non-nil at about
-     * the same time and then never become nil.
-     *)
-    <* ASSERT (t.original_type = NIL) = (t.type = NIL) *>
     IF (t.type = NIL) THEN
       t.type := Expr.TypeOf (t.dfault);
-      t.original_type := t.type;
     END;
-    <* ASSERT t.original_type # NIL AND t.type # NIL *>
     RETURN t.type;
   END TypeOf;
-
-PROCEDURE OriginalTypeOf (t: T): Type.T =
-  BEGIN
-    (* Type and original_type should both transition to non-nil at about
-     * the same time and then never become nil.
-     *)
-    <* ASSERT (t.original_type = NIL) = (t.type = NIL) *>
-    IF t.original_type = NIL THEN
-      EVAL TypeOf (t);
-    END;
-    <* ASSERT t.original_type # NIL AND t.type # NIL *>
-    RETURN t.original_type;
-  END OriginalTypeOf;
 
 (* Externally dispatched-to: *)
 PROCEDURE RepTypeOf (t: T): Type.T =
@@ -228,9 +205,9 @@ PROCEDURE Check (t: T;  VAR cs: Value.CheckState) =
         Error.ID (t.name, "VAR parameters cannot have defaults (2.2.8).");
         t.kind := Type.Class.Error;
       END;
-      IF  NOT Type.IsAssignable (t.type, Expr.TypeOf (t.dfault)) THEN
+      IF  NOT Type.IsAssignable (type, Expr.TypeOf (t.dfault)) THEN
         Error.ID (t.name, "default must be assignable to formal (2.2.8).");
-(* FIXME ^ 2.2.8 says default must be a *member* of t.type, which is stronger
+(* FIXME ^ 2.2.8 says default must be a *member* of type, which is stronger
    than assignable. *)
         t.kind := Type.Class.Error;
       END;
@@ -242,7 +219,7 @@ PROCEDURE Check (t: T;  VAR cs: Value.CheckState) =
          otherwise we'd loose references to large named constants. *)
     END;
 
-    t.openArray := OpenArrayType.Is (Type.Base (t.type));
+    t.openArray := OpenArrayType.Is (Type.Base (type));
     IF t.openArray AND t.mode = Mode.mVALUE
        (* ^Open array VALUE formal is lo-level passed by reference.
           Prolog will make a copy. *)
@@ -278,7 +255,6 @@ PROCEDURE Compile (t: T) =
     Type.Compile (RepTypeOf (t));
     Type.Compile (t.refType);
     Type.Compile (Expr.TypeOf (t.dfault));
-    Type.Compile (OriginalTypeOf (t));
   END Compile;
 
 (* Externally dispatched-to: *)

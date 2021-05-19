@@ -14,7 +14,7 @@ IMPORT ProcType, Stmt, BlockStmt, Marker, Coverage, M3RT;
 IMPORT CallExpr, Token, Variable, ProcExpr, Tracer;
 IMPORT Scanner, Decl, ESet, ProcBody, Target, Expr, Formal, Jmpbufs;
 FROM Scanner IMPORT GetToken, Match, MatchID, cur;
-FROM M3CG IMPORT QID;
+FROM M3CG IMPORT TypeUID;
 
 REVEAL
   T = Value.T BRANDED OBJECT
@@ -394,14 +394,14 @@ PROCEDURE LoadStaticLink (t: T) =
  END LoadStaticLink;
 
 PROCEDURE ImportProc (p: T;  name: TEXT;  n_formals: INTEGER;
-                      cg_result: CG.Type; return_typename: QID;
+                      cg_result: CG.Type; return_typeid: TypeUID;
                       cc: CG.CallingConvention) =
   VAR zz: Scope.T;  new: BOOLEAN;
   BEGIN
     <*ASSERT p.cg_proc = NIL*>
     p.next_cg_proc := cg_procs;  cg_procs := p;
     p.cg_proc := CG.Import_procedure (M3ID.Add (name), n_formals,
-                                      cg_result, cc, new, return_typename := return_typename);
+                                      cg_result, cc, new, return_typeid);
     IF (new) THEN
       (* declare the formals *)
       IF (p.syms # NIL) THEN
@@ -455,7 +455,6 @@ PROCEDURE Declarer (p: T): BOOLEAN =
     parent: CG.Proc := NIL;
     cg_result: CG.Type;
     name := Value.GlobalName (p, dots := FALSE);
-    type: CG.TypeUID;
     sig := p.signature;
     n_formals: INTEGER;
     cconv: CG.CallingConvention;
@@ -472,7 +471,7 @@ PROCEDURE Declarer (p: T): BOOLEAN =
       Type.Compile (sig);
     END;
     Type.Compile (p.signature);
-    type := Type.GlobalUID (p.signature);
+    EVAL Type.GlobalUID (p.signature); (* why? *)
     (* try to compile the imported type first... *)
 
     cg_result := ProcType.CGResult (p.signature);
@@ -487,7 +486,9 @@ PROCEDURE Declarer (p: T): BOOLEAN =
         RETURN FALSE;
       ELSE
         (* it's an imported procedure *)
-        ImportProc (p, name, n_formals, cg_result, ProcType.ResultTypename (p.signature), cconv);
+        ImportProc (p, name, n_formals, cg_result,
+                    Type.GlobalUID (ProcType.Result (p.signature)),
+                    cconv);
         RETURN TRUE;
       END;
     END;
@@ -498,7 +499,8 @@ PROCEDURE Declarer (p: T): BOOLEAN =
     p.cg_proc := CG.Declare_procedure (M3ID.Add (name),
                     n_formals, cg_result, p.body.level,  cconv,
                     exported := (p.exported OR p.imported),
-                    parent := parent, return_typename := ProcType.ResultTypename (p.signature));
+                    parent := parent,
+                    return_typeid := Type.GlobalUID (ProcType.Result (p.signature)));
     p.body.cg_proc := p.cg_proc;
     Scanner.offset := p.origin;
     IF (p.syms # NIL) THEN
