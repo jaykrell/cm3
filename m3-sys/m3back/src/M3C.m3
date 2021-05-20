@@ -43,7 +43,7 @@ VAR CaseDefaultAssertFalse := FALSE;
  *        an in-memory layout
  *)
 
-TYPE Multipass_t = M3CG_MultiPass.T BRANDED "M3C.Multipass_t" OBJECT
+TYPE Multipass_t = M3CG_MultiPass.T OBJECT
         self: T;
     OVERRIDES
         end_unit := multipass_end_unit;
@@ -51,7 +51,7 @@ TYPE Multipass_t = M3CG_MultiPass.T BRANDED "M3C.Multipass_t" OBJECT
     END;
 
 TYPE
-T = M3CG_DoNothing.T BRANDED "M3C.T" OBJECT
+T = M3CG_DoNothing.T OBJECT
 
         no_return := FALSE; (* are there any no_return functions -- i.e. #include <sys/cdefs.h on Darwin for __dead2 *)
 
@@ -60,7 +60,6 @@ T = M3CG_DoNothing.T BRANDED "M3C.T" OBJECT
         procs_pending_output: RefSeq.T := NIL; (*TODO*) (* Proc_t *)
         typeidToType: IntRefTbl.T := NIL;
         pendingTypes: RefSeq.T := NIL; (* Type_t *)
-        declareTypes: DeclareTypes_t := NIL;
         temp_vars: REF ARRAY OF Var_t := NIL; (* for check_* to avoid double evaluation, and pop_static_link *)
         current_block: Block_t := NIL;
 
@@ -135,8 +134,6 @@ T = M3CG_DoNothing.T BRANDED "M3C.T" OBJECT
 
     OVERRIDES
         end_unit   := end_unit;
-
-        declare_typename := declare_typename;
 
         set_error_handler := set_error_handler;
         begin_unit := begin_unit;
@@ -1464,11 +1461,7 @@ BEGIN
     END;
 *)
     Type_ForwardDeclare(type, self);
-    IF Type_CanBeDefined(type, self) THEN
-        type.Define(self);
-    ELSE
-        self.pendingTypes.addhi(type);
-    END;
+    self.pendingTypes.addhi(type);
 END Type_Init;
 
 PROCEDURE SignExtend(a, b: INTEGER): INTEGER =
@@ -2524,8 +2517,8 @@ BEGIN
     self.Type_Init(NEW(Integer_t, state := Type_State.CanBeDefined, cgtype := widechar_target_type,
                        typeid := UID_WIDECHAR, (* max := IntToTarget(self, widechar_last), *) text := "WIDECHAR"));
 
-    (* self.declareTypes.declare_subrange(UID_RANGE_0_31, UID_INTEGER, TInt.Zero, IntToTarget(self, 31), Target.Integer.size); *)
-    (* self.declareTypes.declare_subrange(UID_RANGE_0_63, UID_INTEGER, TInt.Zero, IntToTarget(self, 63), Target.Integer.size); *)
+    (* self.initTypes.declare_subrange(UID_RANGE_0_31, UID_INTEGER, TInt.Zero, IntToTarget(self, 31), Target.Integer.size); *)
+    (* self.initTypes.declare_subrange(UID_RANGE_0_63, UID_INTEGER, TInt.Zero, IntToTarget(self, 63), Target.Integer.size); *)
     
     TYPE AddressTypeInit_t = RECORD
         typeid: TypeUID := 0;
@@ -2613,8 +2606,16 @@ BEGIN
     self.Replay(x, index, self.op_data[M3CG_Binary.Op.set_error_handler]);
     Prefix_Print(x, self);
 
-    (* declare/define types *)
-    DeclareTypes(self);
+    (* Types are built up gradually.
+       - First all data structures and forward declarations.
+       - Then add typenames to the data structures.
+       - Then define as dependencies are defined.
+         - Add typenames immediately after define.
+         - Favor typenames (first typename) in dependents.
+    *)
+    InitTypes(self);
+    Typenames(self);
+    DefineTypes(self);
 
     HelperFunctions(self);
     GetStructSizes(self); (* TODO remove this when we finish strong typing *)
@@ -2702,8 +2703,9 @@ END set_source_line;
 
 (*------------------------------------------- debugging type declarations ---*)
 
-PROCEDURE declare_typename(self: T; typeid: TypeUID; name: Name) =
+PROCEDURE declare_typename(typenames: Typenames_t; typeid: TypeUID; name: Name) =
 VAR nameText := NameT(name);
+    self := typenames.self;
 BEGIN
   IF DebugVerbose(self) THEN
     self.comment("declare_typename typeid:", TypeIDToText(typeid), " name:" & nameText);
@@ -2724,7 +2726,7 @@ BEGIN
     RETURN "T" & UIntToHex(Word.And(16_FFFFFFFF, x));
 END TypeIDToText;
 
-PROCEDURE declare_array(self: DeclareTypes_t; typeid, index_typeid, element_typeid: TypeUID; bit_size: BitSize) =
+PROCEDURE declare_array(self: InitTypes_t; typeid, index_typeid, element_typeid: TypeUID; bit_size: BitSize) =
 VAR x := self.self;
 BEGIN
     IF DebugVerbose(x) THEN
@@ -2743,7 +2745,7 @@ BEGIN
         ));
   END declare_array;
 
-PROCEDURE declare_open_array(self: DeclareTypes_t; typeid, element_typeid: TypeUID; bit_size: BitSize) =
+PROCEDURE declare_open_array(self: InitTypes_t; typeid, element_typeid: TypeUID; bit_size: BitSize) =
 VAR x := self.self;
 BEGIN
     IF TRUE OR DebugVerbose(x) THEN
@@ -2785,7 +2787,7 @@ BEGIN
 *)
   END declare_open_array;
 
-PROCEDURE declare_enum(self: DeclareTypes_t; typeid: TypeUID; element_count: INTEGER; bit_size: BitSize) =
+PROCEDURE declare_enum(self: InitTypes_t; typeid: TypeUID; element_count: INTEGER; bit_size: BitSize) =
 VAR x := self.self;
     enum: Enum_t := NIL;
 BEGIN
@@ -2815,7 +2817,7 @@ BEGIN
     self.enum_value := 0;
 END declare_enum;
 
-PROCEDURE declare_enum_elt(self: DeclareTypes_t; name: Name) =
+PROCEDURE declare_enum_elt(self: InitTypes_t; name: Name) =
 VAR enum_value := self.enum_value;
     enum_element_count := self.enum_element_count;
     x := self.self;
@@ -2849,7 +2851,7 @@ BEGIN
     self.enum_value := enum_value;
   END declare_enum_elt;
 
-PROCEDURE declare_packed(self: DeclareTypes_t; typeid: TypeUID; bit_size: BitSize; base_typeid: TypeUID) =
+PROCEDURE declare_packed(self: InitTypes_t; typeid: TypeUID; bit_size: BitSize; base_typeid: TypeUID) =
 VAR x := self.self;
 BEGIN
     IF DebugVerbose(x) THEN
@@ -2866,7 +2868,7 @@ BEGIN
         ));
 END declare_packed;
 
-TYPE DeclareTypes_t = M3CG_DoNothing.T BRANDED "M3C.DeclareTypes_t" OBJECT
+TYPE InitTypes_t = M3CG_DoNothing.T OBJECT
     self: T := NIL;
 
     (* declare_enum, declare_enum_elt *)
@@ -2902,50 +2904,72 @@ OVERRIDES
     declare_subrange := declare_subrange;
 END;
 
-PROCEDURE DeclareTypes_FlushOnce(x: T) =
+TYPE Typenames_t = M3CG_DoNothing.T OBJECT
+    self: T := NIL;
+OVERRIDES
+    declare_typename := declare_typename;
+END;
+
+PROCEDURE DefineTypes_FlushOnce(x: T) =
 VAR size := x.pendingTypes.size();
 BEGIN
     FOR i := 1 TO size DO
         WITH type = NARROW(x.pendingTypes.remlo(), Type_t) DO
             IF type.IsDefined() THEN
                 (* nothing *)
-                x.comment("DeclareTypes_FlushOnce IsDefined:" & type.text);
+                x.comment("DefineTypes_FlushOnce IsDefined:" & type.text);
             ELSIF type.CanBeDefined(x) THEN
-                x.comment("DeclareTypes_FlushOnce CanBeDefined:" & type.text);
+                x.comment("DefineTypes_FlushOnce CanBeDefined:" & type.text);
                 type.Define(x);
             ELSE
-                x.comment("DeclareTypes_FlushOnce pending:" & type.text);
+                x.comment("DefineTypes_FlushOnce pending:" & type.text);
                 x.pendingTypes.addhi(type);
             END;
         END;
     END;
-END DeclareTypes_FlushOnce;
+END DefineTypes_FlushOnce;
 
-PROCEDURE DeclareTypes(multipass: Multipass_t) =
+PROCEDURE InitTypes(multipass: Multipass_t) =
 VAR x := multipass.self;
-    self := NEW(DeclareTypes_t, self := x);
+    self := NEW(InitTypes_t, self := x);
     index := 0;
-    size_before, size_after := 0;
 BEGIN
-    x.declareTypes := self;
-    x.comment("begin: DeclareTypes");
+    x.comment("begin: InitTypes");
     DeclareBuiltinTypes(x); (* This must be before replay. *)
     multipass.Replay(self, index);
+    x.comment("end: InitTypes");
+END InitTypes;
+
+PROCEDURE Typenames(multipass: Multipass_t) =
+VAR x := multipass.self;
+    self := NEW(Typenames_t, self := x);
+    index := 0;
+BEGIN
+    x.comment("begin: Typenames");
+    multipass.Replay(self, index);
+    x.comment("end: Typenames");
+END Typenames;
+
+PROCEDURE DefineTypes(multipass: Multipass_t) =
+VAR x := multipass.self;
+    size_before, size_after := 0;
+BEGIN
+    x.comment("begin: DefineTypes");
 
     size_before := x.pendingTypes.size();
     WHILE size_before > 0 DO
-        DeclareTypes_FlushOnce(x);
+        DefineTypes_FlushOnce(x);
         size_after := x.pendingTypes.size();
         IF size_after >= size_before THEN
-            Err(x, "DeclareTypes not progressing");
+            Err(x, "DefineTypes not progressing");
         END;
         size_before := size_after;
     END;
 
-    x.comment("end: DeclareTypes");
-END DeclareTypes;
+    x.comment("end: DefineTypes");
+END DefineTypes;
 
-PROCEDURE declare_record(self: DeclareTypes_t; typeid: TypeUID; bit_size: BitSize; field_count: INTEGER) =
+PROCEDURE declare_record(self: InitTypes_t; typeid: TypeUID; bit_size: BitSize; field_count: INTEGER) =
 VAR record: Record_t := NIL;
     x := self.self;
 BEGIN
@@ -2975,7 +2999,7 @@ BEGIN
     END;
 END declare_record;
 
-PROCEDURE declare_field(self: DeclareTypes_t; name: Name; bit_offset: BitOffset; bit_size: BitSize; typeid: TypeUID) =
+PROCEDURE declare_field(self: InitTypes_t; name: Name; bit_offset: BitOffset; bit_size: BitSize; typeid: TypeUID) =
 VAR field: Field_t := NIL;
     previous_field := self.previous_field;
     x := self.self;
@@ -3014,7 +3038,7 @@ BEGIN
     END;
 END declare_field;
 
-PROCEDURE declare_set(self: DeclareTypes_t; typeid, domain_type: TypeUID; bit_size: BitSize) =
+PROCEDURE declare_set(self: InitTypes_t; typeid, domain_type: TypeUID; bit_size: BitSize) =
 VAR x := self.self;
     integers := ARRAY [0..3] OF Target.Int_type { Target.Word8,
                                                   Target.Word16,
@@ -3066,7 +3090,7 @@ BEGIN
     RETURN SignedAndBitsToCGType[SubrangeIsSigned(min, max)][bit_size];
 END SubrangeCGType;
 
-PROCEDURE declare_subrange(self: DeclareTypes_t; typeid, domain_typeid: TypeUID; READONLY min, max: Target.Int; bit_size: BitSize) =
+PROCEDURE declare_subrange(self: InitTypes_t; typeid, domain_typeid: TypeUID; READONLY min, max: Target.Int; bit_size: BitSize) =
 VAR x := self.self;
 BEGIN
     IF DebugVerbose(x) THEN
@@ -3106,7 +3130,7 @@ BEGIN
         type_text_tail := "_" & IntToDec(bit_size)));
 END declare_subrange;
 
-PROCEDURE declare_pointer(self: DeclareTypes_t; typeid, target: TypeUID; brand: TEXT; traced: BOOLEAN) =
+PROCEDURE declare_pointer(self: InitTypes_t; typeid, target: TypeUID; brand: TEXT; traced: BOOLEAN) =
 VAR x := self.self;
 BEGIN
     IF typeid = target OR DebugVerbose(x) THEN
@@ -3125,7 +3149,7 @@ BEGIN
             traced := traced));
 END declare_pointer;
 
-PROCEDURE declare_indirect(self: DeclareTypes_t; typeid, target: TypeUID; target_typename: QID) =
+PROCEDURE declare_indirect(self: InitTypes_t; typeid, target: TypeUID; target_typename: QID) =
 VAR x := self.self;
 BEGIN
     IF DebugVerbose(x) THEN
@@ -3147,7 +3171,7 @@ BEGIN
     RETURN Target.ConventionFromID(callingConvention.m3cg_id).name;
 END CallingConventionToText;
 
-PROCEDURE declare_proctype(self: DeclareTypes_t; typeid: TypeUID; param_count: INTEGER; result: TypeUID; raise_count: INTEGER; callingConvention: CallingConvention; result_typename: QID) =
+PROCEDURE declare_proctype(self: InitTypes_t; typeid: TypeUID; param_count: INTEGER; result: TypeUID; raise_count: INTEGER; callingConvention: CallingConvention; result_typename: QID) =
 VAR x := self.self;
 BEGIN
     IF DebugVerbose(x) THEN
@@ -3171,7 +3195,7 @@ BEGIN
     x.Type_Init(self.procType);
 END declare_proctype;
 
-PROCEDURE declare_formal(self: DeclareTypes_t; name: Name; typeid: TypeUID; typename: QID) =
+PROCEDURE declare_formal(self: InitTypes_t; name: Name; typeid: TypeUID; typename: QID) =
 VAR x := self.self;
     type := self.procType;
 BEGIN
@@ -3189,7 +3213,7 @@ BEGIN
   END;
 END declare_formal;
 
-PROCEDURE declare_raises(self: DeclareTypes_t; name: Name) =
+PROCEDURE declare_raises(self: InitTypes_t; name: Name) =
 VAR x := self.self;
 BEGIN
     IF DebugVerbose(x) THEN
@@ -3200,7 +3224,7 @@ BEGIN
     (* SuppressLineDirective(self, -1, "declare_raises"); *)
 END declare_raises;
 
-PROCEDURE declare_object(self: DeclareTypes_t; typeid, super: TypeUID; brand: TEXT; traced: BOOLEAN; field_count, method_count: INTEGER; field_size: BitSize) =
+PROCEDURE declare_object(self: InitTypes_t; typeid, super: TypeUID; brand: TEXT; traced: BOOLEAN; field_count, method_count: INTEGER; field_size: BitSize) =
 VAR record: Record_t := NIL;
     x := self.self;
 BEGIN
@@ -3240,7 +3264,7 @@ BEGIN
             traced := traced));
 END declare_object;
 
-PROCEDURE declare_method(self: DeclareTypes_t; name: Name; signature: TypeUID) =
+PROCEDURE declare_method(self: InitTypes_t; name: Name; signature: TypeUID) =
 VAR x := self.self;
 BEGIN
     IF DebugVerbose(x) THEN
@@ -3252,7 +3276,7 @@ BEGIN
     SuppressLineDirective(x, -1, "declare_method");
 END declare_method;
 
-PROCEDURE declare_opaque(self: DeclareTypes_t; typeid, super: TypeUID) =
+PROCEDURE declare_opaque(self: InitTypes_t; typeid, super: TypeUID) =
 VAR x := self.self;
 BEGIN
     IF DebugVerbose(x) THEN
@@ -3265,7 +3289,7 @@ BEGIN
     x.Type_Init(NEW(AddressType_t, cgtype := Target.Address.cg_type, typeid := typeid)); (* TODO? *)
 END declare_opaque;
 
-PROCEDURE reveal_opaque(self: DeclareTypes_t; lhs, rhs: TypeUID) =<*NOWARN*>
+PROCEDURE reveal_opaque(self: InitTypes_t; lhs, rhs: TypeUID) =<*NOWARN*>
 (* VAR x := self.self; *)
 BEGIN
     (* m3front does not always reveal_opaque in the same order,
@@ -3281,7 +3305,7 @@ BEGIN
      *)
 END reveal_opaque;
 
-PROCEDURE declare_exception(self: DeclareTypes_t; name: Name; arg_type: TypeUID; raise_proc: BOOLEAN; base: M3CG.Var; offset: INTEGER) =
+PROCEDURE declare_exception(self: InitTypes_t; name: Name; arg_type: TypeUID; raise_proc: BOOLEAN; base: M3CG.Var; offset: INTEGER) =
 VAR x := self.self;
 BEGIN
     IF DebugVerbose(x) THEN
@@ -3573,13 +3597,13 @@ BEGIN
     MarkUsed_var(var);
 END MarkUsed_store;
 
-TYPE CountUsedLabels_t = M3CG_DoNothing.T BRANDED "M3C.CountUsedLabels_t" OBJECT
+TYPE CountUsedLabels_t = M3CG_DoNothing.T OBJECT
     count := 0;
 OVERRIDES
     case_jump := CountUsedLabels_case_jump;
 END;
 
-TYPE MarkUsed_t = M3CG_DoNothing.T BRANDED "M3C.MarkUsed_t" OBJECT
+TYPE MarkUsed_t = M3CG_DoNothing.T OBJECT
     self: T;
     labels: REF ARRAY OF Label := NIL;
     index := 0;
@@ -3589,6 +3613,7 @@ OVERRIDES
 (* frontend creates unreferenced labels, that gcc -Wall complains about;
    the point of this pass is to mark which labels are actually used,
    so that later set_label ignores unused labels
+   TODO: pragma away the warning and remove this; or move it to m3front
 *)
     jump := MarkUsed_label;
     if_true := MarkUsed_if_true;
@@ -3599,6 +3624,7 @@ OVERRIDES
 (* frontend creates unreferenced variables, that gcc -Wall complains about;
    the point of this pass is to mark which variables are actually used,
    so that later code ignores unused variables
+   TODO: pragma away the warning and remove this; or move it to m3front
 *)
     load := MarkUsed_load;
     load_address := MarkUsed_load_address;
@@ -3718,7 +3744,7 @@ BEGIN
    x.comment("end: mark used");
 END MarkUsed;
 
-TYPE Segments_t = M3CG_DoNothing.T BRANDED "M3C.Segments_t" OBJECT
+TYPE Segments_t = M3CG_DoNothing.T OBJECT
 (* The goal of this pass is to build up segments/globals before they are used.
    Specifically, we used to do this:
        struct foo_t; typedef struct foo_t foo_t;
@@ -3879,7 +3905,7 @@ END HelperFunctions;
 
 (* Helper functions are only output if needed, to avoid warnings about unused functions.
  * This pass determines which helper functions are neded and outputs them. *)
-TYPE HelperFunctions_t = M3CG_DoNothing.T BRANDED "M3C.HelperFunctions_t" OBJECT
+TYPE HelperFunctions_t = M3CG_DoNothing.T OBJECT
     self: T := NIL;
     data: RECORD
         pos, memcmp, memcpy, memmove, memset, floor, ceil, fence,
@@ -4223,7 +4249,7 @@ BEGIN
     HelperFunctions_helper_with_boolean_and_array(self, self.data.fence, text);
 END HelperFunctions_fence;
 
-TYPE Locals_t = M3CG_DoNothing.T BRANDED "M3C.Locals_t" OBJECT
+TYPE Locals_t = M3CG_DoNothing.T OBJECT
     self: T := NIL;
 OVERRIDES
     declare_segment := Locals_declare_segment; (* declare_segment is needed, to get the unit name, to check for exception handlers *)
@@ -4328,7 +4354,7 @@ BEGIN
     AllocateTemps_common(self, type);
 END AllocateTemps_check_index;
 
-TYPE Imports_t = M3CG_DoNothing.T BRANDED "M3C.Imports_t" OBJECT
+TYPE Imports_t = M3CG_DoNothing.T OBJECT
     self: T;
 OVERRIDES
     import_procedure := Imports_import_procedure;
@@ -4382,7 +4408,7 @@ BEGIN
     RETURN import_global(self.self, name, byte_size, alignment, type, typeid);
 END Imports_import_global;
 
-TYPE GetStructSizes_t = M3CG_DoNothing.T BRANDED "M3C.GetStructSizes_t" OBJECT
+TYPE GetStructSizes_t = M3CG_DoNothing.T OBJECT
     sizes: REF ARRAY OF INTEGER := NIL;
     count := 0;
 METHODS
