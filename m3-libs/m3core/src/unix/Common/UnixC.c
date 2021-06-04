@@ -187,7 +187,7 @@ Unix__mkdir(const char* path, m3_mode_t mode)
 }
 
 M3_DLL_EXPORT int __cdecl
-Unix__pipe (int* files)
+UnixC__pipe (int* files)
 {
     return _pipe(files, 0, _O_BINARY);
 }
