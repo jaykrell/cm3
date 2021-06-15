@@ -332,24 +332,24 @@ m3_rotate64(UINT64 value, int shift)
 
 #endif /* WIN32 */
 
-void __cdecl m3_memcpy(void* dest, const void* source, size_t n)
+void __cdecl m3_memcpy(ADDRESS dest, ADDRESS source, size_t n)
 {
-    memmove(dest, source, n); // memmove is more conservative than memcpy
+    memmove(M3_ADDRESS_TO_POINTER (dest), M3_ADDRESS_TO_POINTER (source), n); // memmove is more conservative than memcpy
 }
 
-void __cdecl m3_memmove(void* dest, const void* source, size_t n)
+void __cdecl m3_memmove(ADDRESS dest, ADDRESS source, size_t n)
 {
-    memmove(dest, source, n);
+    memmove(M3_ADDRESS_TO_POINTER (dest), M3_ADDRESS_TO_POINTER (source), n);
 }
 
-void __cdecl m3_memset(void* dest, int fill, size_t count)
+void __cdecl m3_memset(ADDRESS dest, int fill, size_t count)
 {
-    memset(dest, fill, count);
+    memset(M3_ADDRESS_TO_POINTER (dest), fill, count);
 }
 
-int __cdecl m3_memcmp(const void* a, const void* b, size_t n)
+int __cdecl m3_memcmp(ADDRESS a, ADDRESS b, size_t n)
 {
-    return memcmp(a, b, n);
+    return memcmp(M3_ADDRESS_TO_POINTER (a), M3_ADDRESS_TO_POINTER (b), n);
 }
 
 #ifdef __cplusplus

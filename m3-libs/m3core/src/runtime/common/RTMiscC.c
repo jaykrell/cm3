@@ -14,14 +14,14 @@ extern "C" {
 
 void __cdecl RTMisc__Copy(ADDRESS src, ADDRESS dest, INTEGER ilen)
 {
-    WORD_T const len = (WORD_T)ilen; // Modula-3 lacks unsigned types, pass as signed and cast.
-    memmove(dest, src, len);
+    size_t const len = (size_t)ilen; // Modula-3 lacks unsigned types, pass as signed and cast.
+    memmove(M3_ADDRESS_TO_POINTER(dest), M3_ADDRESS_TO_POINTER(src), len);
 }
 
 void __cdecl RTMisc__Zero(ADDRESS dest, INTEGER ilen)
 {
-    WORD_T const len = (WORD_T)ilen; // Modula-3 lacks unsigned types, pass as signed and cast.
-    memset(dest, 0, len);
+    size_t const len = (size_t)ilen; // Modula-3 lacks unsigned types, pass as signed and cast.
+    memset(M3_ADDRESS_TO_POINTER(dest), 0, len);
 }
 
 /*------------------------------- rounded arithmetic ------------------------*/
