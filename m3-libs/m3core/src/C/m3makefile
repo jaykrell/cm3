@@ -19,11 +19,13 @@ end
 %end
 
 if equal(OS_TYPE, "WIN32")
-  if equal(WORD_SIZE, "64BITS")
+  if equal(WORD_SIZE, "64BITS") or M3_TARGET64
     include_dir("WIN64")
   else
     include_dir("32BITS")
   end
+else if equal(WORD_SIZE, "64BITS") or M3_TARGET64
+  include_dir("64BITS")
 else
   include_dir(WORD_SIZE)
-end
+end end
