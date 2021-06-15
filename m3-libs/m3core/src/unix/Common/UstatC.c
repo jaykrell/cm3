@@ -100,8 +100,8 @@ Ustat__fstat(int fd, m3_stat_t* m3st)
 
 #ifdef HAS_STAT_FLAGS
 
-M3WRAP2(int, chflags, const char*, unsigned long)
-M3WRAP2(int, fchflags, int, unsigned long)
+M3WRAP2(int, chflags, const char*, WORD_T)
+M3WRAP2(int, fchflags, int, WORD_T)
 
 #endif
 

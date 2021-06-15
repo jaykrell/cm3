@@ -27,8 +27,8 @@ extern char _procedure_string_table[];
 
 /* TYPE Frame = RECORD pc, sp: ADDRESS;  cxt: Usignal.struct_sigcontext END; */
 typedef struct {
-  unsigned long pc;
-  unsigned long sp;
+  WORD_T pc;
+  WORD_T sp;
   struct sigcontext cxt;
   long lock;
 } Frame;
@@ -41,7 +41,7 @@ typedef struct runtime_pdr *Proc;
 /* RTStack__Find searches the runtime table for the entry corresponding
    to the given pc.  */
 
-Proc RTStack__Find (unsigned long pc)
+Proc RTStack__Find (WORD_T pc)
 {
   int n = PSIZE;
   int lo = 0;

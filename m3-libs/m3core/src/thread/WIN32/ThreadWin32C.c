@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #undef assert
 #define assert(expr) ((expr) || (ThreadWin32_AssertFailed(__FILE__, __LINE__, #expr), 0))
-void ThreadWin32_AssertFailed(const char* file, unsigned long line, const char* expr)
+void ThreadWin32_AssertFailed(const char* file, WORD_T line, const char* expr)
 {
 	char buffer[1024] = { 0 };
 	DWORD length = (DWORD)wsprintfA(buffer,  "assert failed:%s(%lu) %s\n", __FILE__, __LINE__, expr);

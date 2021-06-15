@@ -32,20 +32,20 @@ extern "C" {
 /* enabled */
 
 #ifndef _WIN32
-static unsigned long GetCurrentThreadId(void) { return (unsigned long)(WORD_T)pthread_self(); }
+static WORD_T GetCurrentThreadId(void) { return (WORD_T)pthread_self(); }
 static long InterlockedIncrement(volatile long* a) { return ++*a; }
 #endif
 
 typedef struct _ThreadDebug__LogEntry_t {
 /* The names here are terse to produce more compact debugger output. */
-    unsigned tm;        /* time */
-    unsigned long tid;  /* thread id */
+    WORD_T tm;          /* time */
+    WORD_T tid;         /* thread id */
     const char* f;      /* function */
     void* c;            /* condition */
     void* m;            /* mutex */
     void* t;            /* thread */
     void* e;            /* event */
-    unsigned long to;   /* timeout */
+    WORD_T to;          /* timeout */
 } ThreadDebug__LogEntry_t;
 
 static ThreadDebug__LogEntry_t ThreadDebug__Log[10]; /* size can be tuned for the scenario */
@@ -77,7 +77,7 @@ static const char LockMutex[] = "LockMutex";
 static const char UnlockMutex[] = "UnlockMutex";
 
 static void __cdecl
-ThreadDebug__LogEntry(const char* function, void* c, void* m, void* t, void* event, unsigned long timeout)
+ThreadDebug__LogEntry(const char* function, void* c, void* m, void* t, void* event, WORD_T timeout)
 {
     if (function != LockMutex && function != UnlockMutex)
     {
@@ -105,7 +105,7 @@ static void* const c;
 static void* const m;
 static void* const t;
 static void* const event;
-static unsigned long const timeout;
+static WORD_T const timeout;
 
 #else
 
@@ -134,7 +134,7 @@ ThreadDebug__InnerWait(void* m, void* c, void* t /* self */)
 }
 
 void __cdecl
-ThreadDebug__Event_Wait(void* event, unsigned long timeout)
+ThreadDebug__Event_Wait(void* event, WORD_T timeout)
 {
     LOG("Event_Wait");
 }
