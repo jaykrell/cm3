@@ -1233,10 +1233,10 @@ PROCEDURE GetCurrentProcess (): HANDLE;
 <*EXTERNAL GetCurrentProcessId:WINAPI*>
 PROCEDURE GetCurrentProcessId (): UINT32;
 
-<*EXTERNAL ExitProcess:WINAPI*>
+<*EXTERNAL WinBase__ExitProcess:WINAPI*>
 PROCEDURE ExitProcess (uExitCode: UINT32_ARG);
 
-<*EXTERNAL TerminateProcess:WINAPI*>
+<*EXTERNAL WinBase__TerminateProcess:WINAPI*>
 PROCEDURE TerminateProcess (hProcess: HANDLE; uExitCode: UINT32_ARG): BOOL;
 
 <*EXTERNAL GetExitCodeProcess:WINAPI*>
@@ -1282,7 +1282,7 @@ PROCEDURE SetUnhandledExceptionFilter (
                      lpTopLevelExceptionFilter: LPTOP_LEVEL_EXCEPTION_FILTER
                                       ): PTOP_LEVEL_EXCEPTION_FILTER;
 
-<*EXTERNAL CreateThread:WINAPI*>
+<*EXTERNAL WinBase__CreateThread:WINAPI*>
 PROCEDURE CreateThread (lpThreadAttributes: PSECURITY_ATTRIBUTES;
                         dwStackSize       : SIZE_T;
                         lpStartAddress    : PTHREAD_START_ROUTINE;
@@ -2146,7 +2146,7 @@ CONST
 <*EXTERNAL TlsGetValue:WINAPI*>
 PROCEDURE TlsGetValue (dwTlsIndex: UINT32): SIZE_T;
 
-<*EXTERNAL TlsSetValue:WINAPI*>
+<*EXTERNAL WinBase__TlsSetValue:WINAPI*>
 PROCEDURE TlsSetValue (dwTlsIndex: UINT32; lpTlsValue: SIZE_T): BOOL;
 
 <*EXTERNAL TlsFree:WINAPI*>

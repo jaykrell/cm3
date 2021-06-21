@@ -560,29 +560,29 @@ CONST  WSABASEERR  = 10000;
 
 
 
-<* EXTERNAL accept:PASCAL *>
+<* EXTERNAL WinSock__accept:PASCAL *>
 PROCEDURE accept(
     s: SOCKET; addr: struct_sockaddr_star; addrlen: PINT32): SOCKET;
 
-<* EXTERNAL bind:PASCAL *>
+<* EXTERNAL WinSock__bind:PASCAL *>
 PROCEDURE bind (
     s: SOCKET; name: struct_sockaddr_star; namelen: INT32): INT32;
 
-<* EXTERNAL closesocket:PASCAL *>
+<* EXTERNAL WinSock__closesocket:PASCAL *>
 PROCEDURE closesocket (s: SOCKET): INT32;
 
-<* EXTERNAL connect:PASCAL *>
+<* EXTERNAL WinSock__connect:PASCAL *>
 PROCEDURE connect (
     s: SOCKET; addr: struct_sockaddr_star; namelen: INT32): INT32;
 
-<* EXTERNAL ioctlsocket:PASCAL *>
+<* EXTERNAL WinSock__ioctlsocket:PASCAL *>
 PROCEDURE ioctlsocket (s: SOCKET; cmd: UINT32_ARG; argp: UNTRACED REF UINT32): INT32;
 
-<* EXTERNAL getpeername:PASCAL *>
+<* EXTERNAL WinSock__getpeername:PASCAL *>
 PROCEDURE getpeername (
     s: SOCKET; name: struct_sockaddr_star; namelen: PINT32): INT32;
 
-<* EXTERNAL getsockname:PASCAL *>
+<* EXTERNAL WinSock__getsockname:PASCAL *>
 PROCEDURE getsockname (
     s: SOCKET; name: struct_sockaddr_star; namelen: PINT32): INT32;
 
@@ -603,7 +603,7 @@ PROCEDURE inet_addr (cp: char_star): UINT32 (*struct_in_addr*);
 <* EXTERNAL inet_ntoa:PASCAL *>
 PROCEDURE inet_ntoa (in: struct_in_addr): char_star;
 
-<* EXTERNAL listen:PASCAL *>
+<* EXTERNAL WinSock__listen:PASCAL *>
 PROCEDURE listen(s: SOCKET; backlog: INT32): INT32;
 
 <* EXTERNAL ntohl:PASCAL *>
@@ -612,10 +612,10 @@ PROCEDURE ntohl (netlong: UINT32): UINT32;
 <* EXTERNAL ntohs:PASCAL *>
 PROCEDURE ntohs (netshort: UINT16): UINT16;
 
-<* EXTERNAL recv:PASCAL *>
+<* EXTERNAL WinSock__recv:PASCAL *>
 PROCEDURE recv(s: SOCKET; buf: char_star; len, flags: INT32): INT32;
 
-<* EXTERNAL recvfrom:PASCAL *>
+<* EXTERNAL WinSock__recvfrom:PASCAL *>
 PROCEDURE recvfrom(
     s: SOCKET; buf: char_star; len, flags: INT32;
     from: struct_sockaddr_star; fromlen: PINT32): INT32;
@@ -625,15 +625,15 @@ PROCEDURE select (
     nfds: INT32; readfds, writefds, exceptfds: UNTRACED REF struct_fd_set;
     timeout: UNTRACED REF struct_timeval): INT32;
 
-<* EXTERNAL send:PASCAL *>
+<* EXTERNAL WinSock__send:PASCAL *>
 PROCEDURE send(s: SOCKET; msg: char_star; len, flags: INT32): INT32;
 
-<* EXTERNAL sendto:PASCAL *>
+<* EXTERNAL WinSock__sendto:PASCAL *>
 PROCEDURE sendto (
     s: SOCKET; buf: char_star; len, flags: INT32;
     to: struct_sockaddr_star; tolen: INT32): INT32;
 
-<* EXTERNAL setsockopt:PASCAL *>
+<* EXTERNAL WinSock__setsockopt:PASCAL *>
 PROCEDURE setsockopt(
     s: SOCKET; level, optname: INT32; optval: char_star; optlen: INT32): INT32;
 

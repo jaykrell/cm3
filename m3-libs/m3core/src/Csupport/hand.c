@@ -332,24 +332,25 @@ m3_rotate64(UINT64 value, int shift)
 
 #endif /* WIN32 */
 
-void __cdecl m3_memcpy(void* dest, const void* source, size_t n)
+// TODO remove memcpy
+void __cdecl m3_memcpy(M3_PTR_TYPE(void*) dest, M3_PTR_TYPE(const void*) source, UINT64 n)
 {
-    memmove(dest, source, n); // memmove is more conservative than memcpy
+    memmove(M3_PTR_TO_NATIVE(void*, dest), M3_PTR_TO_NATIVE(void*, source), (size_t)n); // memmove is more conservative than memcpy
 }
 
-void __cdecl m3_memmove(void* dest, const void* source, size_t n)
+void __cdecl m3_memmove(M3_PTR_TYPE(void*) dest, M3_PTR_TYPE(const void*) source, UINT64 n)
 {
-    memmove(dest, source, n);
+    memmove(M3_PTR_TO_NATIVE(void*, dest), M3_PTR_TO_NATIVE(void*, source), (size_t)n);
 }
 
-void __cdecl m3_memset(void* dest, int fill, size_t count)
+void __cdecl m3_memset(M3_PTR_TYPE(void*) dest, int fill, UINT64 count)
 {
-    memset(dest, fill, count);
+    memset(M3_PTR_TO_NATIVE(void*, dest), fill, (size_t)count);
 }
 
-int __cdecl m3_memcmp(const void* a, const void* b, size_t n)
+int __cdecl m3_memcmp(M3_PTR_TYPE(const void*) a, M3_PTR_TYPE(const void*) b, UINT64 n)
 {
-    return memcmp(a, b, n);
+    return memcmp(M3_PTR_TO_NATIVE(const void*, a), M3_PTR_TO_NATIVE(const void*, b), (size_t)n);
 }
 
 #ifdef __cplusplus

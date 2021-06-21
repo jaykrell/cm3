@@ -466,6 +466,26 @@ typedef unsigned            size_t, uintptr_t;
 #endif
 #endif
 
+union M3PointerUnion;
+typedef union M3PointerUnion M3PointerUnion;
+union M3PointerUnion
+{
+    void* p;
+#if M3_TARGET64
+    UINT64 i;
+#endif
+};
+
+#if M3_TARGET64
+#define M3_PTR_TYPE(T)         UINT64
+#define M3_PTR_TO_NATIVE(T, x) ((T)(uintptr_t)(x))
+#define M3_PTR_FROM_NATIVE(x)  ((UINT64)(uintptr_t)x)
+#else
+#define M3_PTR_TYPE(T)         T
+#define M3_PTR_TO_NATIVE(T, x) x /* x should already be T */
+#define M3_PTR_FROM_NATIVE(x)  x
+#endif
+
 // On all known systems, sizeof(size_t) == sizeof(intptr_t) == sizeof(void*).
 // Except VMS.
 // On VMS/Alpha confirmed April 2021:
@@ -491,37 +511,6 @@ typedef size_t WORD_T;
 // enforcement!) to only be used with the Word interface functions,
 // which interpret it as unsigned).
 
-#ifdef M3Ptr
-#error M3Ptr should not be defined before m3core.h.
-#define M3Ptr M3Ptr
-#endif
-
-#ifdef M3_PTR
-#error M3_PTR should not be defined before m3core.h.
-#endif
-
-#if M3_TARGET64
-
-#include <stdint.h>
-
-template <typename T>
-union M3Ptr
-{
-  UINT64 i;
-  T* p; // just for debugging, never reference
-
-  operator char*() { return (char*)(size_t)i; }
-  T& operator *() { return *(T*)(uintptr_t)i; }
-};
-
-#define M3_PTR(T) M3Ptr<T>
-
-#else
-#define M3_PTR(T) T*
-#endif
-
-//trouble, extern C functions cannot return templates
-//typedef M3_PTR(char) ADDRESS; /* void* might be nice, but char* allows math */
 typedef char* ADDRESS; /* void* might be nice, but char* allows math */
 
 #ifdef __cplusplus
@@ -1280,7 +1269,8 @@ typedef void (__cdecl*ThreadPThread__ProcessThreadStack)(void* start, void* limi
 // but we cannot use that due to type collision hashes,
 // until/unless significant m3c changes.
 // This works:
-typedef void (__cdecl*M3PROC)(void); // from MxGen.m3
+typedef void (__cdecl*M3PROCNative)(void); // from MxGen.m3
+typedef M3_PTR_TYPE(M3PROCNative) M3PROC;
 typedef M3PROC RT0__Binder;
 // The actual use and pass casts and so getting the type correct here does
 // not really matter. What matters is that it is the same in all function

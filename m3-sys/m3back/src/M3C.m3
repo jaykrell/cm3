@@ -746,9 +746,9 @@ BEGIN
       END;
       IF cgtype = CGType.Addr AND NOT PassStructsByValue AND (type.isRecord() OR type.isArray()) THEN (* TODO remove this *)
         IF debug THEN
-          type_text := type_text & " * /*TypeText2*/ ";
+          type_text := "M3_PTR_TYPE(" & type_text & " * ) /*TypeText2*/ ";
         ELSE
-          type_text := type_text & "* ";
+          type_text := "M3_PTR_TYPE(" & type_text & " * ) ";
         END;
       END;
     ELSE
@@ -769,7 +769,7 @@ BEGIN
   IF name # 0 THEN
     typename_text := NameT (name);
     IF NOT self.typedef_defined.insert(typename_text) THEN
-      ifndef(self, typename_text, "//7");
+      ifndef(self, typename_text, "/*7*/");
       IF type_text # typename_text THEN (* pointer check is opportunistic, there are duplicates of some sort *)
         print(self, "typedef " & type_text & " " & typename_text & ";");
       END;
@@ -988,7 +988,7 @@ BEGIN
 
     (* We have recursive types TYPE FOO = UNTRACED REF FOO. Typos actually. *)
     IF type.refers_to_typeid = type.typeid THEN
-      print(x, "typedef void* " & type.text & ";\n");
+      print(x, "typedef M3_PTR_TYPE(void * ) " & type.text & ";\n");
       RETURN;
     END;
 
@@ -1010,8 +1010,7 @@ BEGIN
       target_typename := type.refers_to_type.text;
     END;
 
-    (* target_typename := target_typename & "*"; *)
-    target_typename := "M3_PTR(" & target_typename & ")";
+    target_typename := "M3_PTR_TYPE(" & target_typename & " * )";
 
     (* TODO This typedef is not likely needed, given the subsequent rendering as target*.
      * And then this replacement can be done immediately without waiting for target
@@ -1035,7 +1034,7 @@ BEGIN
     END;
 
     IF NOT x.typedef_defined.insert(typetext) THEN
-      ifndef (self, typetext, "//8");
+      ifndef (self, typetext, "8");
       (* TODO It might be possible to eliminate the hashed names. *)
       print(x, "typedef " & refers_to_type.base_text & " " & typetext & ";");
       IF refers_to_type # NIL
@@ -1261,7 +1260,7 @@ END record_canBeDefined;
 PROCEDURE ifndef(self:T; id: TEXT; comment: TEXT := NIL) =
 BEGIN
   IF debug_verbose AND comment # NIL THEN
-    print (self, "\n#ifndef " & id & "\n#define " & id & " " & id & comment & "\n");
+    print (self, "\n#ifndef " & id & "\n#define " & id & " " & id & " /* " & comment & " */\n");
   ELSE
     print (self, "\n#ifndef " & id & "\n#define " & id & " " & id & "\n");
   END
@@ -1511,7 +1510,7 @@ PROCEDURE fixedArray_define(type: FixedArray_t; x: T) =
 BEGIN
     type.element_type.Define(x);
 
-    ifndef(x, type.base_text, "//1"); (* ifdef so multiple files can be concatenated and compiled at once *)
+    ifndef(x, type.base_text, "1"); (* ifdef so multiple files can be concatenated and compiled at once *)
 
     print(x, "/*fixedArray_define*/struct " & type.base_text & "{");
     print(x, type.element_type.text);
@@ -1562,21 +1561,15 @@ BEGIN
         element_type_text := "char/*TODO*/";
     END;
 
-    ifndef(x, type.base_text, "//2"); (* ifdef so multiple files can be concatenated and compiled at once *)
+    ifndef(x, type.base_text, "2"); (* ifdef so multiple files can be concatenated and compiled at once *)
+    text := element_type_text;
+    FOR i := 1 TO dimensions DO
+      text := text & "*";
+    END;
+    text := "/*openArray_define*/struct " & type.base_text & "{\n" & "M3_PTR_TYPE(" & text & ")";
+    text := text & "_elts;\n";
+    text := text & "CARDINAL _sizes[" & IntToDec(dimensions) & "]"; (* array of sizes for each dimension *)
 
-    IF Target.Target64 AND element_type.cgtype = CGType.Addr THEN
-      text := "/*openArray_define64*/struct " & type.base_text & "{\nINTEGER ";
-    ELSE
-      text := "/*openArray_define*/struct " & type.base_text & "{\n" & element_type_text;
-      FOR i := 1 TO dimensions DO
-          text := text & "*";
-          (* text := "M3_PTR(" & text & ")"; *)
-      END;
-    END;
-    text := text & "_elts;\nCARDINAL _size";
-    IF dimensions > 1 THEN
-        text := text & "s[" & IntToDec(dimensions) & "]";
-    END;
     print(x, text & ";\n};");
     endif(x);
 END openArray_define;
@@ -1693,7 +1686,7 @@ END ProcType_canBeDefined;
 PROCEDURE ProcType_define (procType: ProcType_t; self: T) =
 VAR return := procType.types [0];
     id := procType.typenames [0];
-    text := "void";
+    text := "typedef void";
 BEGIN
 
   (* Define all dependent typenames and types. *)
@@ -1707,46 +1700,38 @@ BEGIN
     END;
   END;
 
-  print (self, "\n#if 0 /* avoid type hash collions */\ntypedef ");
-
   IF id # M3ID.NoID THEN
-    text := NameT (id);
+    text := "typedef " & NameT (id);
   ELSIF return # NIL THEN
-    text := return.text;
+    text := "typedef " & return.text;
   END;
-  print (self, text);
+
   (* Ifdef guard might be needed here, but it is also advantageous
    * to omit. If there are duplicates, the C compiler verifies
    * they are equivalent, else errors.
    *)
-  print (self, "(");
-  print (self, CallingConventionToText (procType.callingConvention));
-  print (self, "*");
-  print (self, procType.text);
-  print (self, ")(");
+  text := text & "(";
+  text := text & CallingConventionToText (procType.callingConvention);
+  text := text & "*";
+  text := text & procType.text;
+  text := text & ")(";
   IF NUMBER (procType.types^) = 1 THEN
-    print (self, "void"); (* empty parameter list, for C and C++ *)
+    text := text & "void"; (* empty parameter list, for C and C++ *)
   ELSE
     FOR i := 1 TO NUMBER (procType.types^) - 1 DO
       id := procType.typenames [i];
       IF id # M3ID.NoID THEN
-        text := NameT (id);
+        text := text & NameT (id);
       ELSE
-        text := procType.types [i].text;
+        text := text & procType.types [i].text;
       END;
-      print (self, text);
       IF i # NUMBER (procType.types^) - 1 THEN
-        print (self, ",");
+        text := text & ",";
       END;
     END;
   END;
-  print (self, ");");
 
-(* print (self, "\n#else\ntypedef ADDRESS " & procType.text & ";\n#endif\n");
- * void ( * )(void) seems pretty common for function pointers so see how
- * far that gets us. This is a bit of a hack.
- *)
-  print (self, "\n#else\ntypedef void (__cdecl*" & procType.text & ")(void);\n#endif\n");
+  print (self, "// avoid type hash collisions " & text & ");\ntypedef M3PROC " & procType.text & ";\n");
 
 END ProcType_define;
 
@@ -2271,7 +2256,7 @@ END;
 
 PROCEDURE Var_Init(var: Var_t): Var_t =
 BEGIN
-    var.up_level := var.up_level OR Target.Target64;
+    var.up_level := var.up_level OR Target.Target64; (* TODO controllable with #if *)
     var.is_static_link := (var.name = var.self.static_link_id);
     var.name := Var_FixName(var.self, var.name, var.exported OR var.imported);
     RETURN var;
@@ -2548,6 +2533,7 @@ CONST Prefix = ARRAY OF TEXT {
 "#define UINT64_(x) x##ULL",
 "#endif",
 "",
+
 (* This chunk can/should be moved to HelperFunctions i.e. memcmp | memmove |
    memcpy | memset | copy_n | zero | set_compare, esp. to reduce #include
    <stddef.h>.
@@ -2577,16 +2563,39 @@ CONST Prefix = ARRAY OF TEXT {
 "#include <stdint.h>",
 "#endif",
 "#endif",
-"",
-"#define M3_TARGET64_ARRAY2 [sizeof(char*)/4] /* so writing 64bit INTEGER on top of 32bit pointer is safe */",
-"#define M3_TARGET64_INDEX0 [0] /* access first element of 2 element array */",
-"#define M3_TARGET64_INIT0  ={0} /* zero the explicit padding */",
-"#else",
-"#define M3_TARGET64_ARRAY2 /* nothing */",
-"#define M3_TARGET64_INDEX0 /* nothing */",
-"#define M3_TARGET64_INIT0  /* nothing */ /* not a bad idea to use ={0} here too */",
 "#endif",
 "",
+
+"#if __INITIAL_POINTER_SIZE == 64 || M3_TARGET64 /* __INITIAL_POINTER_SIZE is VMS-ism */",
+"typedef INT64 INTEGER;",
+"typedef UINT64 WORD_T;",
+"#else",
+"typedef ptrdiff_t INTEGER;",
+"typedef size_t WORD_T;",
+"#endif",
+"",
+
+(* TODO put all pointers in structs, pass by value, then the upleveling can go away *)
+"#define M3_TARGET64_ARRAY2 [1 + (sizeof(char*) == 4)] /* so writing 64bit INTEGER on top of 32bit pointer is safe */",
+"#define M3_TARGET64_INDEX0 [0]  /* access first element of 1 or 2 element array */",
+"#define M3_TARGET64_INIT0  ={0} /* zero the explicit padding */",
+"",
+
+"#if M3_TARGET64",
+"#define M3_PTR_TYPE(T)         UINT64",
+"#define M3_PTR_TO_NATIVE(T, x) ((T)(uintptr_t)(x))",
+"#define M3_PTR_FROM_NATIVE(x)  ((UINT64)(uintptr_t)x)",
+"#else",
+"#define M3_PTR_TYPE(T)         T",
+"#define M3_PTR_TO_NATIVE(T, x) x",
+"#define M3_PTR_FROM_NATIVE(x)  x",
+"#endif",
+"",
+
+"typedef void (__cdecl*M3PROCNative)(void); // from MxGen.m3",
+"typedef M3_PTR_TYPE(M3PROCNative) M3PROC;",
+"",
+
 "/* http://c.knowcoding.com/view/23699-portable-alloca.html */",
 "/* Find a good version of alloca. */",
 "#ifndef alloca",
@@ -2630,65 +2639,32 @@ CONST Prefix = ARRAY OF TEXT {
 "#define __stdcall /* nothing */",
 "#endif",
 "",
+
 "#ifndef M3_TARGET64", (* see M3_TARGET64 in Target and config *)
 "#define M3_TARGET64 0",
 "#endif",
 "",
-"#if defined(_MSC_VER) || defined(__DECC) || defined(__DECCXX) || defined(__int64)",
-"typedef          __int64    INT64;",
-"typedef unsigned __int64   UINT64;",
-"#else",
-"typedef          long long  INT64;",
-"typedef unsigned long long UINT64;",
-"#endif",
-"",
-"#if M3_TARGET64",
-"",
-"#ifndef M3Ptr",
-"#define M3Ptr M3Ptr",
-"",
-"template <typename T>",
-"union M3Ptr",
+
+"union M3PointerInitUnion;",
+"typedef union M3PointerInitUnion M3PointerInitUnion;",
+"union M3PointerInitUnion",
 "{",
-"  const void* pv[1 + (sizeof(char*) == 4)]; //for init",
-"  UINT64 i;",
-"  T* p; // just for debugging, never reference",
-"",
-"  template <typename T2> void operator =(T2*q) { i = (uintptr_t)q; }",
-"  template <typename T2> operator T2*() { return (T2*)(uintptr_t)i; }",
-"  template <typename T2> operator UINT64() { return i; }",
-"  T& operator *() { return *(T*)(uintptr_t)i; }",
+"    void* p; // only for initialization and debugging, do not access",
+"    WORD_T i;",
 "};",
 "",
-"// C linkage function cannot return C++ class 'M3Ptr<char>",
-"// Therefore convert a type to its returnable type.",
-"// By default, the RawPtr of T is T,",
-"// but the RawPtrType of M3Ptr<T> is T*.",
-"template <typename T> struct M3Raw { typedef T T; }; // generic",
-"template <typename T> struct M3Raw<M3Ptr<T>> { typedef UINT64 T; /* typedef T* T; */ }; // specialization for M3Ptr<>",
+
+"typedef M3_PTR_TYPE(char * ) ADDRESS; /* void* might be nice, but char* allows math */",
 "",
-"#endif",
-"",
-"#define M3_PTR(T)  M3Ptr<T>",
-"#define M3_RAW(T1) M3Raw<T1>::T",
-"",
-"#else",
-"#define M3_PTR(T) T*",
-"#define M3_RAW(T) T",
-"#endif",
-"",
-"//trouble, extern C functions cannot return templates",
-"//typedef M3_PTR(char) ADDRESS; /* void* might be nice, but char* allows math */",
-"typedef char* ADDRESS; /* void* might be nice, but char* allows math */",
-"",
+
 "#ifdef __cplusplus",
 "extern \"C\" {",
 "#endif",
 "",
-"void __cdecl m3_memcpy(void* dest, const void* source, size_t n);",
-"void __cdecl m3_memmove(void* dest, const void* source, size_t n);",
-"void __cdecl m3_memset(void* dest, int fill, size_t count);",
-"int  __cdecl m3_memcmp(const void* a, const void* b, size_t n);",
+"void __cdecl m3_memcpy(M3_PTR_TYPE(void * ) dest, M3_PTR_TYPE(const void * ) source, UINT64 n);",
+"void __cdecl m3_memmove(M3_PTR_TYPE(void * ) dest, M3_PTR_TYPE(const void * ) source, UINT64 n);",
+"void __cdecl m3_memset(M3_PTR_TYPE(void * ) dest, int fill, UINT64 count);",
+"int  __cdecl m3_memcmp(M3_PTR_TYPE(const void * ) a, M3_PTR_TYPE(const void * ) b, UINT64 n);",
 ""
 };
 
@@ -2721,13 +2697,32 @@ CONST cgtypeToText = ARRAY CGType OF TEXT {
     Text_uint64, Text_int64,  (* 6 7 *)
     "float",  (* REAL *)        (* 8 *)
     "double", (* LONGREAL *)    (* 9 *)
-    "EXTENDED",                 (* A *) (* TODO change to double *)
+    "EXTENDED",                 (* A *) (* TODO change to double (but affects pasting to form function names) *)
     Text_address,               (* B *)
-    "STRUCT",                   (* C *)
+    "STRUCT",                   (* C *) (* TODO make this NIL, it should never be used *)
     "void"                      (* D *)
 };
 
-(* Mainly ADDRESS -> void* to avoid warnings but also cleanups *)
+(* M3PointerInitUnion instead of ADDRESS
+*)
+CONST cgtypeToInitText = ARRAY CGType OF TEXT {
+  "unsigned char",  "signed char",
+  "unsigned short", "short",
+  "unsigned", "int",
+  "UINT64", "INT64",
+  "float", "double", "double",
+  (* For initialization we cannot use a type that might be an integer
+   * as it requires a cast and then is not static. Our choices
+   * are union pointer and integer, or an array of pointers sized 1 + sizeof( char * ) == 4
+   * There is not much basis to chose one over the other.
+   *)
+  "M3PointerInitUnion",
+  NIL,
+  NIL
+};
+
+(* Mainly ADDRESS -> void* to avoid warnings but also cleanups
+*)
 CONST cgtypeToParamText = ARRAY CGType OF TEXT {
   "unsigned char",  "signed char",
   "unsigned short", "short",
@@ -3450,7 +3445,7 @@ BEGIN
             RTIO.PutText("declare_array nil element_type\n");
             RTIO.Flush();
         END;
-        ifndef (self, TypeIDToText (typeid), "//3"); (* ifdef so multiple files can be concatenated and compiled at once *)
+        ifndef (self, TypeIDToText (typeid), "3"); (* ifdef so multiple files can be concatenated and compiled at once *)
         print(self, "/*declare_open_array*/typedef struct {");
         print(self, element_type.text);
         print(self, "* _elts; CARDINAL _size");
@@ -4613,7 +4608,7 @@ BEGIN
                 print(x, "typedef WORD_T* SET;\n#define SET_GRAIN (sizeof(WORD_T) * 8)\n"); (* in M3C.m3 and hand.c *)
                 setAny := TRUE;
             END;
-            ifndef(x, "m3set" & M3CG_Binary.OpText(setData[i].op), "//4");
+            ifndef(x, "m3set" & M3CG_Binary.OpText(setData[i].op), "4");
             print(x, setData[i].text);
             endif(x);
         END;
@@ -4710,7 +4705,7 @@ BEGIN
 
     (* Print per-type content. Remember what types are printed to avoid duplication. *)
     IF NOT type IN types_already_printed THEN
-        ifndef(self.self, "m3_" & op & "_" & cgtypeToText[type], "//5");
+        ifndef(self.self, "m3_" & op & "_" & cgtypeToText[type], "5");
         print(self.self, "m3_" & op & "_T(" & cgtypeToText[type] & ")");
         endif(self.self);
         types_already_printed := types_already_printed + SET OF CGType{type};
@@ -5148,7 +5143,7 @@ BEGIN
             FOR unit := FIRST(units) TO LAST(units) DO
                 IF (size MOD units[unit]) = 0 THEN
                     sizestr := IntToDec(size);
-                    ifndef(x, "struct_" & sizestr & "_t", "//6"); (* see define STRUCT *)
+                    ifndef(x, "struct_" & sizestr & "_t", "/*6*/"); (* see define STRUCT *)
                     print(x, "STRUCT" & IntToDec(units[unit]) & "(" & sizestr & ")");
                     endif(x);
                     EXIT;
@@ -5369,7 +5364,7 @@ TYPE FunctionPrototype_t = { Declare, Define };
 
 PROCEDURE function_prototype(proc: Proc_t; kind: FunctionPrototype_t): TEXT =
 VAR params := proc.params;
-    text := "M3_RAW(" & proc.return_type_text & ")" &
+    text := proc.return_type_text & " " &
             CallingConventionToText(proc.callingConvention) & " " &
             NameT(proc.name);
     after_param: TEXT := NIL;
@@ -5606,11 +5601,7 @@ VAR var := NARROW(v, Var_t);
     const := ARRAY BOOLEAN OF TEXT{"", " const "}[var.const];
 BEGIN
     self.comment("end_init");
-    IF Target.Target64 THEN
-      init_to_offset(self, var.byte_size + 8);
-    ELSE
-      init_to_offset(self, var.byte_size);
-    END;
+    init_to_offset(self, var.byte_size);
     end_init_helper(self);
 
     print(self, "struct " & var_name & "_t{");
@@ -5692,13 +5683,16 @@ BEGIN
     init_to_offset(self, offset);
     (* TODO backend needs to optionally do layout and frontend needs to optionally reference named fields
      * TODO remove this, and offset computation in frontend
+     * TODO This is ugly. Bring back arrays.
+     * TODO combine adjacent char and uchar when values fit
+     * TODO put terminal nuls on text and then use string init
      *)
-    IF TRUE (* offset = 0 OR self.init_type # type OR offset # self.current_offset *) THEN
+    IF TRUE (* offset = 0 OR self.init_type # type OR offset # self.current_offset OR type = CGType.Addr *) THEN
       end_init_helper(self);
-      IF type = CGType.Addr AND Target.Target64 THEN
-        self.fields.addhi(cgtypeToText[type] & " " & GenerateNameLocalText(self) & "[1 + (sizeof(char*) == 4)];\n"); (* 1 or 2 *)
+      IF type = CGType.Addr THEN
+        self.fields.addhi(cgtypeToInitText[type] & " " & GenerateNameLocalText(self) & ";\n"); (* [1] or [2] *)
       ELSE
-        self.fields.addhi(cgtypeToText[type] & " " & GenerateNameLocalText(self) & "[1];\n");
+        self.fields.addhi(cgtypeToInitText[type] & " " & GenerateNameLocalText(self) & "[1];\n");
       END;
       initializer_addhi(self, Text_left_brace);
     END;
@@ -5741,7 +5735,7 @@ BEGIN
       self.comment("init_proc");
     END;
     init_helper(self, offset, CGType.Addr); (* FUTURE: better typing *)
-    initializer_addhi(self, "(ADDRESS)&" & NameT(proc.name));
+    initializer_addhi(self, "(char*)&" & NameT(proc.name));
 END init_proc;
 
 PROCEDURE MarkUsed_proc(self: T; p: M3CG.Proc) =
@@ -6158,7 +6152,7 @@ BEGIN
         (* add field to ensure frame not empty *)
         (* TODO only do this if necessary *)
 
-        print(self, "ADDRESS _unused;\n");
+        print(self, "void* _unused;\n");
 
         (* uplevel locals in frame *)
 
@@ -6233,7 +6227,7 @@ BEGIN
         END;
 
         (* quash unused warning *) (* TODO cleanup -- only declare if needed *)
-        print(self, frame_name & "._unused=(ADDRESS)&" & frame_name & ";\n");
+        print(self, frame_name & "._unused=(void*)&" & frame_name & ";\n");
     END;
 
     (* copy non-uplevel struct params from pointers to local value *)
@@ -6413,9 +6407,9 @@ BEGIN
     ELSE
         (* TODO Is the cast avoidable? *)
         IF type = CGType.Addr OR (NOT ReturnStructsByValue AND type = CGType.Struct) THEN
-            cast1 := "(M3_RAW(";
+            cast1 := "(";
             cast2 := proc.return_type_text;
-            cast3 := "))(";
+            cast3 := ")(";
             cast4 := ")";
         END;
         (* TODO target64? *)
@@ -6430,7 +6424,7 @@ PROCEDURE address_plus_offset(in: TEXT; in_offset: INTEGER): Expr_t =
 VAR pre := "("; post := ")";
 BEGIN
     IF in_offset # 0 THEN
-        pre := "((" & IntToDec(in_offset) & ")+(char*)(";
+        pre := "((" & IntToDec(in_offset) & ")+(ADDRESS)(";
         post := "))";
     END;
     RETURN CTextToExpr(pre & in & post);
@@ -6536,7 +6530,7 @@ BEGIN
             <* ASSERT in_mtype = var.cgtype *>
         END;
     END;
-    IF offset # 0 OR var.cgtype # in_mtype THEN
+    IF offset # 0 OR var.cgtype # in_mtype THEN (* TODO Target64 *)
         expr := AddressOf(expr);
         IF offset # 0 THEN
             expr := cast(expr, type := CGType.Addr);
@@ -7345,9 +7339,7 @@ BEGIN
     print(self, "m3_pop_" & cgtypeToText[type] & "(" & s0.CText() & ");\n");
 END cg_pop;
 
-CONST MemCopyOrMove = ARRAY OF TEXT{"m3_memcpy", "m3_memmove"};
-
-PROCEDURE copy_n(self: T; itype: IType; mtype: MType; overlap: BOOLEAN) =
+PROCEDURE copy_n(self: T; itype: IType; mtype: MType; <*UNUSED*>overlap: BOOLEAN) =
 (* Mem[s2.A:s0.ztype] := Mem[s1.A:s0.ztype]; pop(3)*)
 VAR s0 := cast(get(self, 0), itype);
     s1 := get(self, 1);
@@ -7357,7 +7349,8 @@ BEGIN
       self.comment("copy_n");
     END;
     pop(self, 3);
-    print(self, MemCopyOrMove[ORD(overlap)] & "(\n " & s2.CText() & ",\n " & s1.CText() & ",\n " & IntToDec(CG_Bytes[mtype]) & "*(size_t)" & s0.CText() & ");\n");
+    (* just always memmove, no need for memcpy *)
+    print(self, "m3_memmove(" & s2.CText() & "," & s1.CText() & "," & IntToDec(CG_Bytes[mtype]) & "*(size_t)" & s0.CText() & ");");
 END copy_n;
 
 PROCEDURE copy(self: T; n: INTEGER; mtype: MType; overlap: BOOLEAN) =
@@ -7369,7 +7362,8 @@ BEGIN
       self.comment("copy");
     END;
     pop(self, 2);
-    print(self, MemCopyOrMove[ORD(overlap)] & "(\n " & s1.CText() & ",\n " & s0.CText() & ",\n " & IntToDec(CG_Bytes[mtype] * n) & ");\n");
+    (* just always memmove, no need for memcpy *)
+    print(self, "m3_memmove(" & s1.CText() & "," & s0.CText() & "," & IntToDec(CG_Bytes[mtype] * n) & ");");
 END copy;
 
 <*NOWARN*>PROCEDURE zero_n(self: T; itype: IType; mtype: MType) =

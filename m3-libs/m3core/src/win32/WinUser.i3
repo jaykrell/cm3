@@ -1903,13 +1903,13 @@ PROCEDURE PostMessageW (hWnd  : HWND;
                         lParam: LPARAM  ): BOOL;
 CONST PostMessage = PostMessageA;
 
-<*EXTERNAL PostThreadMessageA:WINAPI*>
+<*EXTERNAL WinUser__PostThreadMessageA:WINAPI*>
 PROCEDURE PostThreadMessageA (idThread: UINT32;
                               Msg     : UINT32;
                               wParam  : WPARAM;
                               lParam  : LPARAM  ): BOOL;
 
-<*EXTERNAL PostThreadMessageW:WINAPI*>
+<*EXTERNAL WinUser__PostThreadMessageW:WINAPI*>
 PROCEDURE PostThreadMessageW (idThread: UINT32;
                               Msg     : UINT32;
                               wParam  : WPARAM;
@@ -2218,14 +2218,14 @@ TYPE
   LPCDLGTEMPLATEW = ADDRESS;
   LPCDLGTEMPLATE = LPCDLGTEMPLATEA;
 
-<*EXTERNAL CreateDialogParamA:WINAPI*>
+<*EXTERNAL WinUser__CreateDialogParamA:WINAPI*>
 PROCEDURE CreateDialogParamA (hInstance     : HINSTANCE;
                                 lpTemplateName: PCSTR;
                                 hWndParent    : HWND;
                                 lpDialogFunc  : DLGPROC;
                                 dwInitParam   : LPARAM     ): HWND;
 
-<*EXTERNAL CreateDialogParamW:WINAPI*>
+<*EXTERNAL WinUser__CreateDialogParamW:WINAPI*>
 PROCEDURE CreateDialogParamW (hInstance     : HINSTANCE;
                                 lpTemplateName: PCWSTR;
                                 hWndParent    : HWND;
@@ -2233,14 +2233,14 @@ PROCEDURE CreateDialogParamW (hInstance     : HINSTANCE;
                                 dwInitParam   : LPARAM     ): HWND;
 CONST CreateDialogParam = CreateDialogParamA;
 
-<*EXTERNAL CreateDialogIndirectParamA:WINAPI*>
+<*EXTERNAL WinUser__CreateDialogIndirectParamA:WINAPI*>
 PROCEDURE CreateDialogIndirectParamA (hInstance   : HINSTANCE;
                                         lpTemplate  : LPCDLGTEMPLATEA;
                                         hwndParent  : HWND;
                                         lpDialogFunc: DLGPROC;
                                         dwInitParam : LPARAM           ): HWND;
 
-<*EXTERNAL CreateDialogIndirectParamW:WINAPI*>
+<*EXTERNAL WinUser__CreateDialogIndirectParamW:WINAPI*>
 PROCEDURE CreateDialogIndirectParamW (hInstance   : HINSTANCE;
                                         lpTemplate  : LPCDLGTEMPLATEW;
                                         hwndParent  : HWND;
@@ -2272,14 +2272,14 @@ PROCEDURE CreateDialogIndirectW (hInstance   : HINSTANCE;
 
 CONST CreateDialogIndirect = CreateDialogIndirectA;
 
-<*EXTERNAL DialogBoxParamA:WINAPI*>
+<*EXTERNAL WinUser__DialogBoxParamA:WINAPI*>
 PROCEDURE DialogBoxParamA (hInstance     : HINSTANCE;
                              lpTemplateName: PCSTR;
                              hWndParent    : HWND;
                              lpDialogFunc  : DLGPROC;
                              dwInitParam   : LPARAM     ): INT32;
 
-<*EXTERNAL DialogBoxParamW:WINAPI*>
+<*EXTERNAL WinUser__DialogBoxParamW:WINAPI*>
 PROCEDURE DialogBoxParamW (hInstance     : HINSTANCE;
                              lpTemplateName: PCWSTR;
                              hWndParent    : HWND;
@@ -2287,14 +2287,14 @@ PROCEDURE DialogBoxParamW (hInstance     : HINSTANCE;
                              dwInitParam   : LPARAM     ): INT32;
 CONST DialogBoxParam = DialogBoxParamA;
 
-<*EXTERNAL DialogBoxIndirectParamA:WINAPI*>
+<*EXTERNAL WinUser__DialogBoxIndirectParamA:WINAPI*>
 PROCEDURE DialogBoxIndirectParamA (hInstance      : HINSTANCE;
                                      hDialogTemplate: LPDLGTEMPLATEA;
                                      hWndParent     : HWND;
                                      lpDialogFunc   : DLGPROC;
                                      dwInitParam    : LPARAM          ): INT32;
 
-<*EXTERNAL DialogBoxIndirectParamW:WINAPI*>
+<*EXTERNAL WinUser__DialogBoxIndirectParamW:WINAPI*>
 PROCEDURE DialogBoxIndirectParamW (hInstance      : HINSTANCE;
                                      hDialogTemplate: LPDLGTEMPLATEW;
                                      hWndParent     : HWND;
@@ -3753,7 +3753,7 @@ CONST FindWindow = FindWindowA;
 <*EXTERNAL EnumWindows:WINAPI*>
 PROCEDURE EnumWindows (lpEnumFunc: WNDENUMPROC; lParam: LPARAM): BOOL;
 
-<*EXTERNAL EnumThreadWindows:WINAPI*>
+<*EXTERNAL WinUser__EnumThreadWindows:WINAPI*>
 PROCEDURE EnumThreadWindows (dwThreadId: UINT32;
                                lpfn      : WNDENUMPROC;
                                lParam    : LPARAM       ): BOOL;
@@ -3820,7 +3820,7 @@ CONST SetWindowsHookEx = SetWindowsHookExA;
 <*EXTERNAL UnhookWindowsHookEx:WINAPI*>
 PROCEDURE UnhookWindowsHookEx (hhk: HHOOK): BOOL;
 
-<*EXTERNAL CallNextHookEx:WINAPI*>
+<*EXTERNAL WinUser__CallNextHookEx:WINAPI*>
 PROCEDURE CallNextHookEx (hhk   : HHOOK;
                             nCode : INT32;
                             wParam: WPARAM;
