@@ -9,7 +9,7 @@
 UNSAFE MODULE LowPerfTool;
 
 IMPORT Ctypes, File, Unix, Text, M3toC, Uexec, Uuio, RTParams;
-IMPORT FilePosix, OSError, RTProcess;
+IMPORT FilePosix, OSError, RTProcessFork;
 
 CONST 
   readPort = 0;
@@ -34,7 +34,7 @@ PROCEDURE Start (name: Text.T; VAR r, w: File.T): BOOLEAN =
     IF Unix.pipe (fromTool) = -1 THEN  ClosePipe (toTool); RETURN FALSE; END;
   
     (* Create the tool process *)
-    CASE RTProcess.Fork () OF
+    CASE RTProcessFork.Fork () OF
       
     | -1 => (* fork failed *)
       ClosePipe (fromTool);

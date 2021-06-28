@@ -1,8 +1,4 @@
-#ifdef _WIN32 /* Do not accidentally export printf. This will break p227/p228. */
-
 char RTIOc_avoid_empty_file_warning_unique_0671f719f3a74ea2b7ba81b160caa215;
-
-#else
 
 #ifndef INCLUDED_M3CORE_H
 #include "m3core.h"
@@ -84,6 +80,4 @@ void __cdecl RTIO__PutLongHex(LONGINT i)
 
 #ifdef __cplusplus
 } /* extern C */
-#endif
-
 #endif

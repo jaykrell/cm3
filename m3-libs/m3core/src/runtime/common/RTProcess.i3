@@ -47,12 +47,5 @@ TYPE ForkHandler = PROCEDURE();
                 because they are apparently broken on some systems *)
 <* EXTERNAL RTProcess__RegisterForkHandlers *>
 PROCEDURE RegisterForkHandlers(prep, parent, child: ForkHandler): INTEGER;
-
-(* Fork:
-  pthreads: fork (fork1 on Solaris)
-  Win32: non-existant
-  user threads: fork but handles RegisterForkHandlers *)
-<* EXTERNAL RTProcess__Fork *>
-PROCEDURE Fork(): INTEGER;
  
 END RTProcess.

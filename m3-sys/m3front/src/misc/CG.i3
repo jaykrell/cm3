@@ -8,7 +8,7 @@
 
 INTERFACE CG;
 
-IMPORT Target, M3CG, M3, M3ID;
+IMPORT Target, M3CG, M3, M3ID, OSError;
 
 (*
 This interface provides a single front-end specific, sometimes
@@ -55,7 +55,7 @@ CONST noAlign: Alignment = 1;
 VAR (* maximum possible machine alignment *)
   Max_alignment: CARDINAL;
 
-PROCEDURE Init ();
+PROCEDURE Init () RAISES {OSError.E};
 (* creates a fresh, initialized code generator *)
 
 (*----------------------------------------------------------- ID counters ---*)

@@ -10,7 +10,7 @@
 UNSAFE MODULE ProcessPosixCommon EXPORTS ProcessPosixCommon, Process;
 
 IMPORT Atom, AtomList, Cerrno, Ctypes, Env, File, FilePosix, M3toC, OSError,
-  OSErrorPosix, Pathname, RTLinker, RTProcess, RTSignal,
+  OSErrorPosix, Pathname, RTLinker, RTProcess, RTProcessFork, RTSignal,
   Text, SchedulerPosix, Unix, Uerror, Uexec, Uprocess, Ustat,
   Uugid, Word, Process;
 
@@ -72,7 +72,7 @@ PROCEDURE Create_ForkExec(
 
     execResult := 0;
     LOOP (* based on bash *)
-      forkResult := RTProcess.Fork();
+      forkResult := RTProcessFork.Fork();
       IF forkResult >= 0 THEN EXIT END;
       forkErrno := Cerrno.GetErrno();
       IF forkErrno # Uerror.EAGAIN AND forkErrno # Uerror.ENOMEM THEN EXIT END;

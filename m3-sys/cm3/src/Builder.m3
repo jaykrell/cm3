@@ -1112,7 +1112,7 @@ PROCEDURE CompileOne (s: State;  u: M3Unit.T) =
       CompileM3X (s, u);
     ELSIF (NOT u.imported) THEN
       FlushPending (s);
-      FinalNameForUnit (s, u);
+      FinalNameForUnit (s, u, s.m3env.def);
       IF IfDebug () THEN
         u_object := u.object;
         IF u_object = NIL THEN
@@ -3154,10 +3154,6 @@ PROCEDURE BuildLibrary (s: State;  shared: BOOLEAN) =
     Msg.Debug ("building the library...", Wr.EOL);
     Utils.Remove (lib_file);
 
-    IF (s.target_oskind = M3Path.OSKind.Win32) THEN
-      GenLibDef (name.base);
-    END;
-
     ETimer.Push (M3Timers.pass_3);
       StartCall (s, s.librarian);
       PushText  (s, name.base);
@@ -3212,19 +3208,6 @@ PROCEDURE BuildBootLibrary (s: State) =
     Msg.Explain ("building makefile -> ", makefile);
     Utils.WriteFile (makefile, Emit, append := FALSE);
   END BuildBootLibrary;
-
-PROCEDURE GenLibDef (libname: TEXT) =
-
-  PROCEDURE Emit (wr: Wr.T) RAISES {Wr.Failure, Thread.Alerted} =
-    BEGIN
-      Wr.PutText (wr, "LIBRARY ");
-      Wr.PutText (wr, libname);
-      Wr.PutText (wr, Wr.EOL);
-    END Emit;
-
-  BEGIN
-    Utils.WriteFile (libname & ".def", Emit, append := FALSE);
-  END GenLibDef;
 
 PROCEDURE GenObjectList (s: State;  wr: Wr.T;  extra: TEXT)
   RAISES {Wr.Failure, Thread.Alerted} =
@@ -3557,11 +3540,17 @@ PROCEDURE FinalNameForUnitInternal (s: State; u: M3Unit.T; boot: BOOLEAN): TEXT 
     RETURN M3Path.Join (NIL, M3ID.ToText (u.name), ext);
   END FinalNameForUnitInternal;
 
-PROCEDURE FinalNameForUnit (s: State;  u: M3Unit.T) =
+PROCEDURE FinalNameForUnit (s: State;  u: M3Unit.T; VAR def: TEXT) =
 (* Name of final file or files to be produced. *) 
   VAR boot := s.bootstrap_mode; (* typically FALSE *)
       object := FinalNameForUnitInternal (s, u, FALSE);
   BEGIN
+    (* list of functions to export on Windows
+     * appending is simplest for quake
+     *)
+    IF object # NIL THEN
+      def := object & ".def";
+    END;
     IF NOT boot THEN
       u.object := object;
       RETURN;

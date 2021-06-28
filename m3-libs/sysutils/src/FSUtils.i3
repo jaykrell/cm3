@@ -25,6 +25,8 @@
 (*--------------------------------------------------------------------------*)
 INTERFACE FSUtils;
 
+FROM Ctypes IMPORT const_int, int, const_char_star;
+
 IMPORT Pathname, TextSeq;
 
 (*--------------------------------------------------------------------------*)
@@ -117,5 +119,12 @@ PROCEDURE PutFile(fn : Pathname.T; data : TEXT) RAISES {E};
   (* Write `data' into file `fn'. Create or overwrite `fn' as needed. *)
 
 (*---------------------------------------------------------------------------*)
+
+<*EXTERNAL "Unix__F_OK"*> VAR F_OK: const_int; (* existance *)
+<*EXTERNAL "Unix__X_OK"*> VAR X_OK: const_int; (* executable *)
+<*EXTERNAL "Unix__W_OK"*> VAR W_OK: const_int; (* writable *)
+<*EXTERNAL "Unix__R_OK"*> VAR R_OK: const_int; (* readable *)
+
+<*EXTERNAL "Unix__access"*>PROCEDURE access (path: const_char_star; mode: int): int;
 
 END FSUtils.

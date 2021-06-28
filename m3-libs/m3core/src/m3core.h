@@ -11,7 +11,7 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif
-#define _NO_CRT_STDIO_INLINE 1 /* Do not accidentally export printf. */
+//#define _NO_CRT_STDIO_INLINE 1 /* Do not accidentally export printf. */
 #define _CRT_SECURE_NO_DEPRECATE 1
 #define _CRT_NONSTDC_NO_DEPRECATE 1
 #define _WINSOCK_DEPRECATED_NO_WARNINGS 1

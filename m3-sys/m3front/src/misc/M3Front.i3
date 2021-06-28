@@ -12,7 +12,7 @@ INTERFACE M3Front;
    can be active at a time.
 *)
 
-IMPORT M3ID, M3Compiler;
+IMPORT M3ID, M3Compiler, OSError;
 
 PROCEDURE ParseImports (READONLY input : SourceFile;
                                  env   : Environment): IDList;
@@ -20,7 +20,7 @@ PROCEDURE ParseImports (READONLY input : SourceFile;
 
 PROCEDURE Compile (READONLY input    : SourceFile;
                             env      : Environment;
-                   READONLY options  : ARRAY OF TEXT): BOOLEAN;
+                   READONLY options  : ARRAY OF TEXT): BOOLEAN RAISES {OSError.E};
 
 (* Reads and compiles a Modula-3 unit from "input".  Evironmental queries
    and reports are made through "env".  The listing and diagnostic options

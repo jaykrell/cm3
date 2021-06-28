@@ -6,8 +6,9 @@
 
 implementation ("RTArgs")
 implementation ("RTOS")
-module         ("RTPerfTool")
 c_source       ("RTOSc")
+module         ("RTPerfTool")
+interface      ("RTProcessFork")
 interface      ("RTSignalPrivate")
 c_source       ("RTSignalC")
 interface      ("RTSignalC")

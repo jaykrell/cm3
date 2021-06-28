@@ -8,8 +8,8 @@
 
 MODULE CG;
 
-IMPORT Text, IntIntTbl, IntRefTbl, Fmt, Word;
-IMPORT Scanner, Error, Module, RunTyme, WebInfo;
+IMPORT Text, IntIntTbl, IntRefTbl, Fmt, Word, Wr, FileWr;
+IMPORT Scanner, Error, Module, RunTyme, WebInfo, OSError, TextUtils;
 IMPORT M3, M3CG, M3CG_Ops, M3CG_Check, M3ID, RTIO, RTParams;
 IMPORT Host, Target, TInt, TFloat, TWord, TargetMap, M3RT (**, RTObject **);
 
@@ -120,6 +120,7 @@ TYPE
   FieldNode   = Node OBJECT n: Name; s: Size; t: TypeUID OVERRIDES dump := DumpField END;
 
 VAR
+  def         : Wr.T        := NIL;
   cg_wr       : M3CG.T      := NIL;
   cg_check    : M3CG.T      := NIL;
   cg          : M3CG.T      := NIL;
@@ -150,7 +151,7 @@ VAR (*CONST*)
 
 (*---------------------------------------------------------------------------*)
 
-PROCEDURE Init () =
+PROCEDURE Init () RAISES {OSError.E} =
   BEGIN
     Max_alignment := Target.Alignments [LAST (Target.Alignments)];
 
@@ -177,6 +178,8 @@ PROCEDURE Init () =
     (** RTObject.PatchMethods (cg_check); **)
     cg := cg_check;
 
+    def := FileWr.Open (Host.env.def);
+
     cg.set_error_handler (Error.Msg);
 
     last_offset    := -2;
@@ -200,6 +203,100 @@ PROCEDURE Init () =
     tos            := 0;
   END Init;
 
+(*---------------------------------------------------------------------------*)
+
+PROCEDURE Export (text: TEXT) =
+BEGIN
+  IF text # NIL THEN
+    Wr.PutText (def, text);
+    Wr.PutText (def, "\n");
+  END;
+END Export;
+
+PROCEDURE Match (txt: TEXT;  start: INTEGER;  key: TEXT): BOOLEAN =
+  BEGIN
+    FOR i := 0 TO Text.Length (key) - 1 DO
+      IF Text.GetChar (txt, start + i) # Text.GetChar (key, i) THEN
+        RETURN FALSE;
+      END;
+    END;
+    RETURN TRUE;
+  END Match;
+
+PROCEDURE MaybeExport (name: Name) =
+(* Allow for building Windows .dlls; these files will be concatenated at link time.
+ *
+ * The rules for what to export are a little strange.
+ *
+ * - Only functions, not data
+ *   This is because importers of data must use pointers and Modula-3 has
+ *   never implemented that. It could be done. Local uses can use
+ *   a pointer to, just suffering perf and linker warning.
+ *
+ * - Must have an underscore or two.
+ *   For imports, double underscores.
+ *   For declares, single (this is handled via direct calls to Export)
+ *   This is to discern external functions directly from underlying system
+ *   vs. hand written C. Though exporting underlying system is ok.
+ *
+ * - Some logic from mklib (the Match calls).
+ *
+ * - Must not be nested.
+ *   Well, these do not appear in interfaces anyway.
+ *
+ * - Only imports into interfaces, nothing in modules.
+ *   Functions that are in modules but not interfaces cannot be
+ *   called from outside present source or library.
+ *
+ * - This is actually too much, but it is difficult/impossible to do better.
+ *   Specifically, .i3 files are ambiguous as to if they export
+ *   to the present library only, or also to outside
+ *)
+VAR sym := M3ID.ToText (name);
+    len := Text.Length (sym);
+BEGIN
+  IF len = 0 THEN
+    <* ASSERT FALSE *>
+    RETURN;
+  END;
+
+  IF Text.GetChar (sym, 0) = '_' THEN
+    (* This is at least the case for NT/x86 stdcall. What else? *)
+    RETURN;
+  END;
+
+  IF NOT TextUtils.Contains (sym, "__") THEN
+    IF len > 3 AND Match (sym, 0, "m3_") THEN
+      (* keep *)
+    ELSE
+      RETURN;
+    END;
+  END;
+
+  IF len > 7 AND Match (sym, 0, "_INITM_") THEN
+    <* ASSERT FALSE *>
+    (* module main body *)
+    RETURN;
+  END;
+
+  IF len > 9
+    AND Match (sym, 0, "MM_")
+    AND Match (sym, len-6, "_CRASH") THEN
+    <* ASSERT FALSE *>
+    RETURN; (* module crash routine *)
+  END;
+
+  IF len > 17
+    AND (Match (sym, 0, "M_") OR Match (sym, 0, "I_"))
+    AND (Match (sym, len-5, "_INIT") OR Match (sym, len-5, "_LINK"))
+    AND Match (sym, len-15, "_t") THEN
+    <* ASSERT FALSE *>
+    RETURN; (* a type initialization or setup routine *)
+  END;
+
+  Export (sym);
+END MaybeExport;
+
 (*----------------------------------------------------------- ID counters ---*)
 
 PROCEDURE Next_label (n_labels := 1): Label =
@@ -221,6 +318,8 @@ PROCEDURE End_unit () =
     Free_all_temps ();
     <*ASSERT ProcStackRoot = NIL*> 
     cg.end_unit ();
+    Wr.Close (def);
+    def := NIL;
   END End_unit;
 
 PROCEDURE Import_unit (n: Name) =
@@ -1377,6 +1476,11 @@ PROCEDURE Import_procedure (n: Name;  n_params: INTEGER;  ret_type: Type;
   BEGIN
     IF (procedures = NIL) THEN procedures := NewNameTbl() END;
     IF procedures.get (n, ref) THEN new := FALSE;  RETURN ref END;
+
+    IF Module.IsInterface () THEN
+      MaybeExport (n); (* Foo__Function *)
+    END;
+
     p := cg.import_procedure (n, n_params, ret_type, cc, return_typeid, return_typename);
     EVAL procedures.put (n, p);
     new := TRUE;
@@ -1393,6 +1497,10 @@ PROCEDURE Declare_procedure (n: Name;  n_params: INTEGER;  ret_type: Type;
     IF (procedures = NIL) THEN procedures := NewNameTbl() END;
 
     <* ASSERT lev = 0 OR NOT exported *> (* nested functions cannot be exported *)
+
+    IF Module.IsInterface () THEN
+      Export (M3ID.ToText (n)); (* Foo_I3 *)
+    END;
 
     p := cg.declare_procedure (n, n_params, ret_type,
                                lev, cc, exported, parent,

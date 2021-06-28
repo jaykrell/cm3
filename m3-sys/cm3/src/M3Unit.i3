@@ -29,12 +29,16 @@ TYPE
      * of bootstrapping -- running an assembler or C compiler -- remains.
      *)
     object       : TEXT    := NIL;
+
+    (* Windows .def to recieve list of functions *)
+    def          : TEXT    := NIL;
     
     (* boot_makefile_object is similar to object.
      * When cm3 -boot is not given, boot_makefile_object is not used.
      * When cm3 -boot is used, boot_makefile_object is what object
      * would have been. That is, these are the files written
-     * into the makefiles that cm3 -boot produces.
+     * into the makefiles that cm3 -boot produces. That nobody uses,
+     * but scripts/python produces similar.
      *)
     boot_makefile_object : TEXT    := NIL;
     link_info    : Mx.Unit := NIL;

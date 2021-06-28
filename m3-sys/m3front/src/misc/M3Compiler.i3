@@ -21,7 +21,11 @@ TYPE
   ImplList   = REF RECORD  impl: M3ID.T;  next: ImplList;  END;
 
 TYPE
-  Environment = OBJECT METHODS
+  Environment = OBJECT
+
+    def: TEXT := NIL;
+
+  METHODS
 
     report_error (file: TEXT;  line: INTEGER;  msg: TEXT);
 

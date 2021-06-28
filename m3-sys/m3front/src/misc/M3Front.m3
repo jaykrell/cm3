@@ -14,7 +14,7 @@ IMPORT Module, Type, BuiltinTypes, Host, Tracer, M3Header, InfoModule;
 IMPORT BuiltinOps, WordModule, LongModule, M3, Time, Coverage, Marker, TypeFP;
 IMPORT Ident, TextExpr, Procedure, SetExpr, TipeDesc, Pathname;
 IMPORT ESet, CG, TextWr, Target, ProcBody, RunTyme, M3ID, Variable;
-IMPORT Text;
+IMPORT Text, OSError;
 IMPORT AtomicAddrModule, AtomicBoolModule, AtomicCharrModule, AtomicIntModule;
 IMPORT AtomicLIntModule, AtomicReffModule, AtomicWCharrModule;
 
@@ -42,7 +42,7 @@ PROCEDURE ParseImports (READONLY input : SourceFile;
 
 PROCEDURE Compile (READONLY input    : SourceFile;
                             env      : Environment;
-                   READONLY options  : ARRAY OF TEXT): BOOLEAN =
+                   READONLY options  : ARRAY OF TEXT): BOOLEAN RAISES {OSError.E} =
   VAR ok: BOOLEAN;  start: Time.T;
   BEGIN
     LOCK mu DO
@@ -153,8 +153,8 @@ PROCEDURE Reset () =
   END Reset;
 
 
-PROCEDURE DoCompile () =
-  VAR m: Module.T;  cs := M3.OuterCheckState;  m_name, filename: M3ID.T;
+PROCEDURE DoCompile () RAISES {OSError.E} =
+   VAR m: Module.T;  cs := M3.OuterCheckState;  m_name, filename: M3ID.T;
   BEGIN
     Scanner.Push (Host.filename, Host.source, is_main := TRUE);
 

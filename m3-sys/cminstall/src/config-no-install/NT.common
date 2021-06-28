@@ -859,11 +859,8 @@ end
 
 proc make_dll_ms(options, objects, imported_libs, lib_file, def_file, dll_file, LinkResponseFile) is
     return try_exec(
-        "@link.exe",
-        WriteResponseFile(
-            LinkResponseFile,
-            " ",
-            [
+        "link.exe",
+        arglist("@", [
                 m3_link_flags,
 % Put this in to "bootstrap backwards" -- build with newer toolsets
 % such that you can subsequently build with older toolsets.
@@ -966,22 +963,14 @@ proc make_lib(lib, options, objects, imported_libs, shared) is
     local m3_lib_flags = [ ]
     if equal(LINKER, "MS")
         % m3_lib_flags = ["-debugtype:cv", "-machine:i386"]
-        m3_lib_flags = ["-ign:__real"]
+        % m3_lib_flags = ["-ign:__real"]
+        m3_lib_flags = [ ]
     end
 
     % build the static library
 
-    ret_code = try_exec(
-        "@mklib",
-        WriteResponseFile(
-            LibResponseFile,
-            " ",
-            [
-                m3_lib_flags,
-                "-out:" & lib_file,
-                options,
-                objects,
-            ]))
+    ret_code = try_exec("link /lib", arglist("@", [objects, options, "-out:" & lib_file]))
+
     if not equal(ret_code, 0) or not FileExists(lib_file)
         error("library creation failed" & EOL)
         if not equal(ret_code, 0)
@@ -991,6 +980,18 @@ proc make_lib(lib, options, objects, imported_libs, shared) is
     end
 
     if shared
+
+        > def_file in
+          write ("EXPORTS\n")
+
+          foreach obj in objects
+            % def file only exists for i3/m3, not e.g. c
+            def = obj & ".def"
+            if FileExists (def)
+              write (fs_contents (def))
+            end
+          end
+        end
 
         % build an import library & DLL
 
