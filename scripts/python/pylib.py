@@ -1214,9 +1214,12 @@ def Boot():
             "AMD64_NT"      : " -Zi -Gy ", # hack some problem with exception handling and alignment otherwise
             }.get(Config) or " -pthread -g "
 
-        #CCompilerOut = {
-        #    "AMD64_NT"      : "-Fo./",
-        #    }.get(Config) or "-o $@"
+        CCompilerOut = {
+            "AMD64_NT"      : "-Fo./",
+            "I386_NT"       : "-Fo./",
+            "ARM32_NT"      : "-Fo./",
+            "ARM64_NT"      : "-Fo./",
+            }.get(Config) or "-o $@"
 
     CCompilerFlags = CCompilerFlags + ({
         "AMD64_LINUX"     : " -m64 ",
@@ -1536,9 +1539,8 @@ def Boot():
 
     LinkOut = [" -o ", " -out:"][nt]
 
-    maino_ext = "o"
     if CBackend:
-        maino_ext = "m3.c"
+        pass
     elif AssembleOnTarget:
         for pkg in main_packages:
             Makefile.write(pkg + ".d/Main.o: " + pkg + ".d/" + mainS + NL)
@@ -1572,9 +1574,13 @@ $(OBJECTS: =
         else:
             Makefile.write(pkg + EXE + ":")
             Makefile.write(" " + "$(OBJECTS) ")
-            Makefile.write(pkg + ".d/Main." + maino_ext)
-            Makefile.write(NL)
-            Makefile.write("\t$(Link) " + pkg + ".d/Main." + maino_ext + LinkOut + "$@" + NL2)
+            if CBackend:
+                # pkg is "cm3" or "mklib"; ".d" means "directory"
+                Makefile.write(pkg + ".d/Main.m3.o\n")
+                Makefile.write("\t$(Link) " + pkg + ".d/Main.m3.o " + LinkOut + "$@\n\n")
+            else:
+                Makefile.write(pkg + ".d/Main.o\n")
+                Makefile.write("\t$(Link) " + pkg + ".d/Main.o " + LinkOut + "$@\n\n")
 
     for o in obj_suffixes:
         VmsMake.write("$ set file/attr=(rfm=var,rat=none) *." + o + "\n")
