@@ -7,7 +7,7 @@
    At the n'th TRY, use the n'th jmpbuf.
    
    Allocation is done wither with alloca(external variable * n),
-   or in future, for the C backend only, using "jmp_buf".
+   or for the C backend only, using "jmp_buf".
 *)
 
 INTERFACE Jmpbufs;
@@ -33,11 +33,15 @@ TYPE
     try_index    := 0;
   END;
 
+  ExceptionFrame1: Type.T; 
+
 PROCEDURE CheckProcPush (VAR cs: CheckState; name: M3ID.T := 0): Proc;
 PROCEDURE CheckProcPop (VAR cs: CheckState; proc: Proc);
 PROCEDURE CheckTry (VAR cs: CheckState; VAR try: Try);
 
 PROCEDURE CompileTryGetJmpbuf (VAR try: Try): CG.Var;
 PROCEDURE CompileProcAllocateJmpbufs (proc: Proc);
+
+PROCEDURE GetExceptionFrame1Type(): Type.T;
 
 END Jmpbufs.

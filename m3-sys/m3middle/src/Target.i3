@@ -161,15 +161,17 @@ TYPE (* machine supported types *)
     XReel,           (* extended precision reals *)
     Addr,            (* addresses *)
     Struct,          (* a block of memory *)
-    Void             (* not-a-type *)
+    Void,            (* not-a-type *)
+    Jmpbuf           (* parameter to setjmp/longjmp *)
   };
 
 CONST
   TypeNamesFixedWidth = ARRAY CGType OF TEXT {
-    "Word8  ", "Int8   ", "Word16 ", "Int16  ",
-    "Word32 ", "Int32  ", "Word64 ", "Int64  ",
-    "Reel   ", "LReel  ", "XReel  ",
-    "Addr   ", "Struct ", "Void   "
+    "Word8   ", "Int8    ", "Word16  ", "Int16   ",
+    "Word32  ", "Int32   ", "Word64  ", "Int64   ",
+    "Reel    ", "LReel   ", "XReel   ",
+    "Addr    ", "Struct  ", "Void    ",
+    "jmp_buf "
   };
 
   TypeNamesDotted = ARRAY CGType OF TEXT {
@@ -180,7 +182,8 @@ CONST
     "Reel", "LReel", "XReel",
     "Addr",
     "Struct",
-    "Void"
+    "Void",
+    "jmp_buf"
   };
 
   TypeNames = ARRAY CGType OF TEXT {
@@ -191,14 +194,16 @@ CONST
     "Reel", "LReel", "XReel",
     "Addr",
     "Struct",
-    "Void"
+    "Void",
+    "jmp_buf"
   };
 
   SignedType = ARRAY CGType OF BOOLEAN {
      FALSE, TRUE,  FALSE, TRUE,  (* Word8 .. Int16 *)
      FALSE, TRUE,  FALSE, TRUE,  (* Word32 .. Int64 *)
      TRUE,  TRUE,  TRUE,         (* Reel .. XReel *)
-     FALSE, FALSE, FALSE         (* Addr .. Void *)
+     FALSE, FALSE, FALSE,        (* Addr .. Void *)
+     FALSE
   };
 
 CONST
@@ -206,7 +211,8 @@ CONST
     TRUE,  TRUE,  TRUE,  TRUE,   (* Word.8, Int.8, Word.16, Int.16 *)
     TRUE,  TRUE,  TRUE,  TRUE,   (* Word.32, Int.32, Word.64, Int.64 *)
     FALSE, FALSE, FALSE,         (* Reel, LReel, XReel *)
-    TRUE,  FALSE, FALSE          (* Addr, Struct, Void *)
+    TRUE,  FALSE, FALSE,         (* Addr, Struct, Void *)
+    FALSE
   };
 
 CONST
@@ -214,7 +220,8 @@ CONST
     FALSE, FALSE, FALSE, FALSE,  (* Word.8, Int.8, Word.16, Int.16 *)
     FALSE, FALSE, FALSE, FALSE,  (* Word.32, Int.32, Word.64, Int.64 *)
     TRUE,  TRUE,  TRUE,          (* Reel, LReel, XReel *)
-    FALSE, FALSE, FALSE          (* Addr, Struct, Void *)
+    FALSE, FALSE, FALSE,         (* Addr, Struct, Void *)
+    FALSE
   };
 
 (*-------------------------------------------------------- integer values ---*)
@@ -492,6 +499,8 @@ VAR Typenames := FALSE;
 (* Ideally the value 0 would be uninitialized, but it is used publically in Quake? *)
 VAR BackendMode: M3BackendMode_t;
 VAR BackendModeInitialized := FALSE;
+
+VAR BackendKnownJmpbuf := FALSE;
 
 PROCEDURE SetBuild_dir(build_dir: TEXT);
 PROCEDURE CleanupSourcePath(file: TEXT): TEXT;

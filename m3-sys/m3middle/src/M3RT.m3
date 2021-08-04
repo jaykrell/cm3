@@ -14,13 +14,13 @@ PROCEDURE Init () =
     AP := Target.Address.pack; (* 32 or 64, same as Target.Integer.pack *)
     CP := Target.Char.pack;    (* 8 *)
   BEGIN
-    (* closure offsets *)
+    (* closure offsets RT0.ProcedureClosure *)
     CL_marker := 0;                (* : INTEGER *)
     CL_proc   := CL_marker + IP;   (* : PROCEDURE() *)
     CL_frame  := CL_proc   + AP;   (* : ADDRESS *)
     CL_SIZE   := CL_frame  + AP;
 
-    (* exception descriptors *)
+    (* exception descriptors RT0.ExceptionDesc *)
     ED_uid      := 0;                (* : INTEGER (ExceptionUID) *)
     ED_name     := ED_uid + IP;      (* : ADDRESS (String) *)
     ED_implicit := ED_name + AP;     (* : INTEGER (boolean) *)
@@ -37,7 +37,7 @@ PROCEDURE Init () =
     EX_offset      := EX_excepts + AP;     (* : INTEGER           *)
     EX_SIZE        := EX_offset + IP;
 
-    (* exception info record *)
+    (* exception info record RT0.RaiseActivation *)
     EA_exception   := 0;                   (* : ADDRESS *)
     EA_arg         := EA_exception + AP;   (* : ADDRESS *)
     EA_module      := EA_arg + AP;         (* : ADDRESS *)
@@ -49,12 +49,12 @@ PROCEDURE Init () =
     EA_un_arg      := EA_un_except + AP;   (* : ADDRESS *)
     EA_SIZE        := EA_un_arg + AP;
 
-    (* all exception frames  (== all of a RaisesNone frame) *)
+    (* all exception frames  (== all of a RaisesNone frame) RTExFrame.Frame *)
     EF_next        := 0;                   (* : ADDRESS *)
     EF_class       := EF_next + AP;        (* : INTEGER(HandlerClass) *)
     EF_SIZE        := EF_class + IP;
 
-    (* Except, ExceptElse, and Finally  frames *)
+    (* Except, ExceptElse, and Finally frames RTExFrame.EF1 *)
     EF1_handles    := EF_SIZE;             (* : ADDRESS *)
     EF1_info       := EF1_handles + AP;    (* : RTException.Activation *)
     EF1_jmpbuf     := EF1_info + EA_SIZE;  (* : jmp_buf *)
@@ -69,17 +69,17 @@ PROCEDURE Init () =
       EF1_SIZE       := EF1_jmpbuf + Target.Jumpbuf_size;
     END;
 
-    (* FinallyProc frames *)
+    (* FinallyProc frames RTExFrame.EF2 *)
     EF2_handler    := EF_SIZE;            (* : ADDRESS (PROC) *)
     EF2_frame      := EF2_handler + AP;   (* : ADDRESS *)
     EF2_info       := EF2_frame + AP;     (* : ADDRESS *)
     EF2_SIZE       := EF2_info + AP;
 
-    (* Raises frames *)
+    (* Raises frames RTExFrame.EF3 *)
     EF3_raises     := EF_SIZE;            (* : ADDRESS *)
     EF3_SIZE       := EF3_raises + AP;
 
-    (* Lock frames *)
+    (* Lock frames RTExFrame.EF4 *)
     EF4_mutex      := EF_SIZE;            (* : MUTEX *)
     EF4_SIZE       := EF4_mutex + AP;
 

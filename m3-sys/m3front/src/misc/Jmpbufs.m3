@@ -165,5 +165,19 @@ BEGIN
     END;
 END CompileProcAllocateJmpbufs;
 
+ExceptionFrame1Type: Type.T;
+
+PROCEDURE GetExceptionFrame1Type(): Type.T =
+(*
+BEGIN
+  IF ExceptionFrame1Type # NIL THEN
+    RETURN ExceptionFrame1Type;
+  END;
+    frame := CG.Declare_local (M3ID.NoID, M3RT.EF1_SIZE, Target.Address.align,
+                               CG.Type.Struct, 0, in_memory := TRUE,
+                               up_level := FALSE, f := CG.Never);
+
+END GetExceptionFrame1Type;
+
 BEGIN
 END Jmpbufs.

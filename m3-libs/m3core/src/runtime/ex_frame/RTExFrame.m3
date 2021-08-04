@@ -15,7 +15,7 @@ IMPORT Thread, Csetjmp;
 *)
 
 (* RTExFrame.Alloca_jmpbuf and Target.Alloca_jmpbuf must match. *)
-CONST Alloca_jmpbuf = TRUE;
+VAR Alloca_jmpbuf := TRUE; (* TODO: Backend shall change this. Possibly frontend via Target. *)
 
 TYPE
   ScopeKind = { Except, ExceptElse,
@@ -34,35 +34,42 @@ TYPE (* RaisesNone *)
   END;
 
 TYPE (* Except, ExceptElse, Finally *)
-  PF1 = UNTRACED REF RECORD (* EF1 *)
+  EF1 = RECORD
     next      : Frame;
     class     : INTEGER;    (* ORD(ScopeKind) *)
     handles   : ExceptionList;    (* NIL-terminated list of exceptions handled *)
     info      : RT0.RaiseActivation;   (* current exception being dispatched *)
     jmpbuf    : ADDRESS; (* allocated with alloca *)
+    (* TODO: C backend shall know this entire type,
+     * and it ends with a jmpbuf by value
+     *)
   END;
+  PF1 = UNTRACED REF RECORD EF1;
 
 TYPE (* FinallyProc *)
-  PF2 = UNTRACED REF RECORD (* EF2 *)
+  EF2 = RECORD
     next    : Frame;
     class   : INTEGER;      (* ORD(ScopeKind) *)
     handler : ADDRESS;      (* the procedure *)
     frame   : ADDRESS;      (* static link for the handler *)
   END;
+  PF2 = UNTRACED REF RECORD EF2;
 
 TYPE (* Raises *)
-  PF3 = UNTRACED REF RECORD (* EF3 *)
+  EF3 = RECORD
     next    : Frame;
     class   : INTEGER;  (* ORD(ScopeKind) *)
     raises  : ExceptionList;  (*  NIL-terminated list of exceptions allowed *)
   END;
+  PF3 = UNTRACED REF EF3;
 
 TYPE (* Lock *)
-  PF4 = UNTRACED REF RECORD (* EF4 *)
+  EF4 = RECORD
     next    : Frame;
     class   : INTEGER;  (* ORD(ScopeKind) *)
     mutex   : MUTEX;    (* the locked mutex *)
   END;
+  PF4 = UNTRACED REF EF4;
 
 (*---------------------------------------------------------------------------*)
 
