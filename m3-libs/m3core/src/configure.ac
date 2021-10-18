@@ -1,0 +1,10 @@
+AC_INIT(m3core, 0)
+AM_INIT_AUTOMAKE
+AC_PROG_CXX
+AC_LANG([C++])
+LT_INIT(pic-only)
+AM_CONFIG_HEADER([config.h])
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+am_LIBTOOLFLAGS=--verbose
+
