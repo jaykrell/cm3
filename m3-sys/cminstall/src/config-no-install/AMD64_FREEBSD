@@ -1,7 +1,5 @@
 readonly TARGET = "AMD64_FREEBSD"
 readonly GNU_PLATFORM = "amd64-freebsd" % "cpu-os" string for GNU
-
-SYSTEM_CC = "c++ -fPIC"
 readonly SYSTEM_ASM = "as -64"
 
 include("AMD64.common")

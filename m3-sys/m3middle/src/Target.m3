@@ -20,7 +20,6 @@ TYPE
    *)
   Systems = {
     Undefined,
-    FreeBSD4,
     I386_CYGWIN,
     I386_INTERIX,
     I386_MINGW,
@@ -40,7 +39,6 @@ CONST
   (* These are uppercase to facilitate case insensitivity. *)
   SystemNames = ARRAY OF TEXT {
     "",
-    "FREEBSD4",
     "I386_CYGWIN",
     "I386_INTERIX",
     "I386_MINGW",
@@ -95,8 +93,7 @@ CONST start = ARRAY OF TEXT{"AMD64", "86",
                             "I86",  "386",  "486",  "586",  "686"};
         end = ARRAY OF TEXT{"AMD64", "86"};
   BEGIN
-    IF System IN SET OF Systems{Systems.FreeBSD4,
-                                Systems.I386_CYGWIN,
+    IF System IN SET OF Systems{Systems.I386_CYGWIN,
                                 Systems.I386_INTERIX,
                                 Systems.I386_MINGW,
                                 Systems.I386_NT,

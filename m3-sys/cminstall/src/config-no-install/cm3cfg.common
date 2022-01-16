@@ -194,7 +194,6 @@ proc InternalPlatformEquivalent(a, b) is
     return TRUE
   end
   foreach c in [{"SPARC32_SOLARIS", "SOLgnu", "SOLsun"},
-                {"I386_FREEBSD", "FreeBSD4"},
                 {"I386_NT", "NT386"},
                 {"I386_CYGWIN", "NT386GNU"},
                 {"I386_MINGW", "NT386MINGNU"},
@@ -310,12 +309,8 @@ proc IsHostOSF1v4() is
   return xIsHostOSF1v4
 end
 
+% This is unused code but perhaps a useful demonstration.
 proc IsHostFreeBSD4() is
-  if defined("HOST")
-    if not InternalPlatformEquivalent(HOST, "I386_FREEBSD")
-      return FALSE
-    end
-  end
   if not defined("xIsHostFreeBSD4")
     xIsHostFreeBSD4 = equal(try_exec("@uname -sr | fgrep \"FreeBSD 4.\" > /dev/null"), 0)
   end
@@ -325,15 +320,6 @@ end
 proc IsTargetOSF1v4() is
   % approx (doesn't work for cross builds)
   return InternalPlatformEquivalent(TARGET, "ALPHA_OSF") and IsNativeBuild() and IsHostOSF1v4()
-end
-
-if not defined("IsTargetFreeBSD4")
-
-proc IsTargetFreeBSD4() is
-  % approx (doesn't work for cross builds)
-  return IsTargetFreeBSD() and IsNativeBuild() and IsHostFreeBSD4()
-end
-
 end
 
 if not defined("HasTrestle")
