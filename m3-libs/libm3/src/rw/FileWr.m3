@@ -14,10 +14,13 @@ UNSAFE MODULE FileWr;
 IMPORT File, FS, Pathname, OSError, RegularFile, Wr, WrClass;
 IMPORT RTIO, Fmt;
 
+VAR debug := TRUE;
+
 PROCEDURE Open(p: Pathname.T): T RAISES {OSError.E} =
   BEGIN
     RETURN NEW(T).init(FS.OpenFile(p))
   END Open;
+
 
 PROCEDURE OpenAppend(p: Pathname.T): T RAISES {OSError.E} =
   VAR h: RegularFile.T := FS.OpenFile(p, truncate := FALSE);
@@ -25,6 +28,7 @@ PROCEDURE OpenAppend(p: Pathname.T): T RAISES {OSError.E} =
     EVAL h.seek(RegularFile.Origin.End, 0);
     RETURN NEW(T).init(h)
   END OpenAppend;
+
 
 REVEAL T = Public BRANDED "FileWr.T" OBJECT
     targetH: File.T;
@@ -40,7 +44,6 @@ REVEAL T = Public BRANDED "FileWr.T" OBJECT
        of "wr.targetH" is equal to "wr.lo". 
 
    Q2: If "wr.seekable", then "wr.targetH" is a "RegularFile.T". *)
-
 
 TYPE CharBuffer = REF ARRAY OF CHAR;
 
@@ -80,8 +83,10 @@ EXCEPTION Error; <*FATAL Error*>
 PROCEDURE Seek(wr: T; n: CARDINAL) RAISES {Wr.Failure} =
   BEGIN
     IF NOT wr.seekable AND n # wr.hi THEN
-        RTIO.PutText("FileWr.Seek:wr.seekable=" & Fmt.Bool(wr.seekable) & ";n=" & Fmt.Int(n) & ";wr.hi=" & Fmt.Int(wr.hi) & "\n");
-        RTIO.Flush();
+        IF debug THEN
+          RTIO.PutText("FileWr.Seek:wr.seekable=" & Fmt.Bool(wr.seekable) & ";n=" & Fmt.Int(n) & ";wr.hi=" & Fmt.Int(wr.hi) & "\n");
+          RTIO.Flush();
+        END;
         RAISE Error
     END;
     TRY
@@ -97,7 +102,12 @@ PROCEDURE Seek(wr: T; n: CARDINAL) RAISES {Wr.Failure} =
         wr.hi := n + NUMBER(wr.buff^);
       END;
     EXCEPT
-    | OSError.E(code) =>  RAISE Wr.Failure(code)
+    | OSError.E(code) =>
+        IF debug THEN
+          RTIO.PutText ("FileWr.Seek\n");
+          RTIO.Flush ();
+        END;
+        RAISE Wr.Failure(code)
     END
   END Seek;
 
@@ -110,7 +120,12 @@ PROCEDURE Length(wr: T): CARDINAL RAISES {Wr.Failure} =
         RETURN wr.cur;
       END
     EXCEPT
-    | OSError.E(code) =>  RAISE Wr.Failure(code)
+    | OSError.E(code) =>
+        IF debug THEN
+          RTIO.PutText ("FileWr.Length\n");
+          RTIO.Flush ();
+        END;
+        RAISE Wr.Failure(code)
     END
   END Length;
 
@@ -118,7 +133,12 @@ PROCEDURE Flush(wr: T) RAISES {Wr.Failure} =
   BEGIN
     IF wr.cur > wr.lo THEN
       TRY EmptyBuffer (wr);
-      EXCEPT OSError.E(code) => RAISE Wr.Failure(code)
+      EXCEPT OSError.E(code) =>
+        IF debug THEN
+          RTIO.PutText ("FileWr.Flush\n");
+          RTIO.Flush ();
+        END;
+        RAISE Wr.Failure(code)
       END;
     END
   END Flush;
@@ -165,7 +185,12 @@ PROCEDURE PutString (wr: T; READONLY buf: ARRAY OF CHAR)
           wr.lo := wr.cur;
           wr.hi := wr.cur + NUMBER(wr.buff^);
         EXCEPT
-        | OSError.E (code) => RAISE Wr.Failure(code);
+        | OSError.E (code) =>
+            IF debug THEN
+              RTIO.PutText ("FileWr.PutString\n");
+              RTIO.Flush ();
+            END;
+            RAISE Wr.Failure(code);
         END
       END 
     END
@@ -175,7 +200,10 @@ PROCEDURE Close(wr: T) RAISES {Wr.Failure} =
   BEGIN
     TRY
       wr.targetH.close()
-    EXCEPT OSError.E(code) => RAISE Wr.Failure(code)
+    EXCEPT OSError.E(code) =>
+      RTIO.PutText ("FileWr.Close\n");
+      RTIO.Flush ();
+      RAISE Wr.Failure(code)
     END;
   END Close;
 

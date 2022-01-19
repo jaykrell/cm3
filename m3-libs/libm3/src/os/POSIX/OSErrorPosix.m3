@@ -7,7 +7,9 @@
 MODULE OSErrorPosix EXPORTS OSError, OSErrorPosix;
 
 IMPORT Atom, AtomList, Cerrno, Fmt, OSError, Text, Uerror;
+IMPORT RTIO, RTParams;
 
+VAR debug := TRUE;
 VAR cache := ARRAY [0..Uerror.Max] OF Atom.T {NIL, ..};
 (* The table is initialized lazily. *)
 
@@ -48,16 +50,38 @@ PROCEDURE AtomToErrno(a: Atom.T): INTEGER =
     RETURN n * sign
   END AtomToErrno;
 
+PROCEDURE Raise0T (errno: INTEGER; t: TEXT) RAISES {OSError.E} =
+  BEGIN
+    IF t # NIL AND debug THEN
+      RTIO.PutText (t);
+      RTIO.PutText ("\n");
+    END;
+    Raise0 (errno);
+  END Raise0T;
+
+PROCEDURE RaiseT (t: TEXT) RAISES {OSError.E} =
+  BEGIN
+    Raise0T (Cerrno.GetErrno (), t);
+  END RaiseT;
+
 PROCEDURE Raise0(errno: INTEGER) RAISES {OSError.E} =
   BEGIN
+    IF debug THEN
+      RTIO.PutText ("OSErrorPosix.Raise0\n");
+      RTIO.Flush ();
+    END;
     RAISE OSError.E(
       NEW(AtomList.T, head := ErrnoAtom(errno), tail := NIL))
   END Raise0;
 
 PROCEDURE Raise() RAISES {OSError.E} =
   BEGIN
+    IF debug THEN
+      RTIO.PutText ("OSErrorPosix.Raise\n");
+    END;
     Raise0(Cerrno.GetErrno())
   END Raise;
 
 BEGIN
+  debug := RTParams.IsPresent ("debug-OSErrorPosix");
 END OSErrorPosix.

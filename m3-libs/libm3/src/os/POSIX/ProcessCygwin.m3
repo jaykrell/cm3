@@ -45,7 +45,7 @@ PROCEDURE Create_Spawn(
 
     (* Did the execve succeed? *)
     IF execResult < 0 THEN
-      OSErrorPosix.Raise0(execErrno)
+      OSErrorPosix.Raise0T (execErrno, "execErrno<0");
     END;
 
     RETURN NEW(T, pid := execResult)

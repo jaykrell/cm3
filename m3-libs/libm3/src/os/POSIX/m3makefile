@@ -7,9 +7,9 @@
 %      modified on Thu Jun 17 19:14:47 PDT 1993 by harrison
 %      modified on Thu May  6 21:38:22 PDT 1993 by mjordan
 
-Module("OSErrorPosix")
-
 if equal (OS_TYPE, "POSIX")
+
+Module("OSErrorPosix")
 
 Interface("OSConfig")
 
@@ -17,7 +17,12 @@ Module("FilePosix")
 
 implementation("FSPosix")
 implementation("PipePosix")
-implementation("PathnamePosix")
+
+if not equal (TARGET, "I386_DJGPP")
+  implementation("PathnamePosix")
+else
+  % DJGPP uses Win32 Pathname to accomodate colons e.g. c:/cm3.
+end
 
 if equal (TARGET, "I386_DJGPP")
   implementation("SocketNone")

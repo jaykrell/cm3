@@ -39,7 +39,7 @@ def Boot():
     Version = CM3VERSION + "-" + time.strftime("%Y%m%d")
     BootDir = "./cm3-boot-" + BuildDir + "-" + Version
 
-    RemoveDirectoryRecursive(BootDir)
+    #RemoveDirectoryRecursive(BootDir)
     CreateDirectory(BootDir)
 
     # This information is duplicated from the config files.

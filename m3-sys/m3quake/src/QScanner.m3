@@ -9,6 +9,7 @@ MODULE QScanner;
 
 IMPORT File, OSError, Text;
 IMPORT M3File, Quake, QToken, QIdent;
+IMPORT RTIO;
 (** IMPORT Stdio, Wr, Fmt; **)
 
 TYPE
@@ -47,10 +48,21 @@ PROCEDURE Init (t: T;  f: File.T;  map: Quake.IDMap): T =
       size := VAL(stat.size, INTEGER);
       t.buffer := NEW (REF ARRAY OF CHAR, MAX (0, size) + 1);
       t.buflen := M3File.Read (f, t.buffer^, size);
-      IF (t.buflen # size) THEN RETURN NIL; END;
+      IF (t.buflen # size) THEN
+        RTIO.PutText ("QScanner.Init size mismatch, return nil\nbuflen:");
+        RTIO.PutInt (t.buflen);
+        RTIO.PutText ("\nsize:");
+        RTIO.PutInt (size);
+        RTIO.PutText ("\n");
+        RTIO.Flush ();
+        RETURN NIL;
+      END;
       t.buffer [t.buflen] := EOFChar;
      END;
-    EXCEPT OSError.E => RETURN NIL;
+    EXCEPT OSError.E =>
+      RTIO.PutText ("QScanner.Init caught exception, return nil\n");
+      RTIO.Flush ();
+      RETURN NIL;
     END;
 
     t.map     := map;

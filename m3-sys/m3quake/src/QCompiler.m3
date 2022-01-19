@@ -49,6 +49,8 @@ PROCEDURE CompileFile (path: TEXT;  map: IDMap): QCode.Stream
       s.code       := NEW (QCode.Stream, source_file := s.file);
       s.map        := map;
 
+      <* assert s.code # NIL *>
+      <* assert s.lexer # NIL *>
       s.code.emit (QC.SetLine, 1);
       s.lexer.next ();  (* prime the input symbol *)
       WHILE s.lexer.token IN StatementStartTokens DO

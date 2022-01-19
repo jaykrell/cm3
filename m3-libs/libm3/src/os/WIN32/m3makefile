@@ -6,7 +6,10 @@
 %      modified on Thu Nov 10 15:17:04 PST 1994 by kalsow
 %      modified on Tue May  4 10:15:15 PDT 1993 by mjordan
 
-Module("OSErrorWin32")
+if equal (TARGET, "I386_DJGPP")
+  % DJGPP uses Win32 Pathname to accomodate colons e.g. c:/cm3.
+  implementation("PathnameWin32")
+else
 
 %
 % This leads to revealing File.T twice, which
@@ -28,7 +31,9 @@ Module("OSErrorWin32")
 % Module("FileWin32")
 %
 
-if not equal (OS_TYPE, "POSIX")
+if equal (OS_TYPE, "WIN32")
+
+Module("OSErrorWin32")
 
 implementation("PathnameWin32")
 
@@ -46,4 +51,5 @@ implementation("ProcessWin32")
 implementation("SocketWin32")
 implementation("OSConfigWin32")
 
+end
 end

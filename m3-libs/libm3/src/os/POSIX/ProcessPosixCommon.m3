@@ -12,7 +12,7 @@ UNSAFE MODULE ProcessPosixCommon EXPORTS ProcessPosixCommon, Process;
 IMPORT Atom, AtomList, Cerrno, Ctypes, Env, File, FilePosix, M3toC, OSError,
   OSErrorPosix, Pathname, RTLinker, RTProcess, RTSignal,
   Text, SchedulerPosix, Unix, Uerror, Uexec, Uprocess, Ustat,
-  Uugid, Word, Process;
+  Uugid, Word, Process, RTIO;
 
 CONST
   NoFileDescriptor: INTEGER = -1;
@@ -99,16 +99,18 @@ PROCEDURE Create_ForkExec(
     IF envx # NIL THEN FreeEnv(envx) END;
     IF wdstr # NIL THEN M3toC.FreeSharedS(wd, wdstr); END;
 
-    IF forkResult < 0 THEN OSErrorPosix.Raise0(forkErrno) END;
+    IF forkResult < 0 THEN
+      OSErrorPosix.Raise0T (forkErrno, "fork<0");
+    END;
 
     (* The vfork succeeded.  Did the execve succeed? *)
     IF execResult < 0 THEN
       (* No, clean up child process. *)
       EVAL Uexec.waitpid(forkResult, ADR(waitStatus), 0);
-      OSErrorPosix.Raise0(execErrno)
+      OSErrorPosix.Raise0T (execErrno, "exec<0");
     END;
 
-    RETURN NEW(Process.T, pid := forkResult)
+    RETURN NEW(Process.T, pid := forkResult);
   END Create_ForkExec;
 
 PROCEDURE GetPathToExec(pn: Pathname.T): Pathname.T RAISES {OSError.E} =
@@ -164,13 +166,13 @@ PROCEDURE GetPathToExec(pn: Pathname.T): Pathname.T RAISES {OSError.E} =
         IF i < 0 THEN EXIT END;
         start := i + 1
       END;
-      OSErrorPosix.Raise0(Uerror.ENOENT)
+      OSErrorPosix.Raise0T (Uerror.ENOENT, "GetPathToExecNoEnt");
     ELSE (* pn contains '/' *)
       pname := M3toC.SharedTtoS(pn);
       IF Ustat.stat(pname, ADR(statBuf)) < 0 THEN
         result := Cerrno.GetErrno();
         M3toC.FreeSharedS(pn, pname);
-        OSErrorPosix.Raise0(result)
+        OSErrorPosix.Raise0T (result, "GetPathToExecStat<0")
       END;
       M3toC.FreeSharedS(pn, pname);
     END;
@@ -350,7 +352,8 @@ PROCEDURE SetWorkingDirectory(pn: Pathname.T) RAISES {OSError.E} =
       IF Unix.chdir(fname) < 0 THEN
         err := Cerrno.GetErrno();
         M3toC.FreeSharedS(pn, fname);
-        OSErrorPosix.Raise0(err);
+        RTIO.PutText ("SetWorkingDirectory Raise\n");
+        OSErrorPosix.Raise0T (err, "chdir<0");
       END;
       wdCache := NIL
     END;

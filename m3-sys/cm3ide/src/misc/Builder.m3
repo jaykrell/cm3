@@ -3,7 +3,7 @@ MODULE Builder;
 IMPORT AtomList, FmtTime, IntRefTbl, Pathname;
 IMPORT Quake, QMachine, QValue, Text, Thread, Time, Wr;
 IMPORT ConfigItem, BrowserDB, BuildCache, Default, ErrLog, HTML, ID;
-IMPORT LineWr, Node, Pkg, Text2, Wx;
+IMPORT LineWr, Node, Pkg, Text2, Wx, RTIO;
 
 TYPE
   CI = ConfigItem.T;
