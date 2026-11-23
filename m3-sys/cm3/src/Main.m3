@@ -57,19 +57,17 @@ VAR defs: TextTextTbl.T;
           END;
         END;
 
-        config := MxConfig.FindFile ();
-        IF (config = NIL) THEN
-          Msg.FatalError (NIL, "unable to locate configuration file, \"",
-                          MxConfig.Filename, "\"");
-        END;
-    
         (* Default to a native build, so the config file can say less. *)
-        
         (* DefineIfNotDefined: overridable from command line with -D *)
-
         DefineIfNotDefined (mach, "TARGET", MxConfig.HOST());
         DefineIfNotDefined (mach, "OS_TYPE", MxConfig.HOST_OS_TYPE_TEXT());
         DefineIfNotDefined (mach, "WORD_SIZE", Fmt.Int(BITSIZE(INTEGER)));
+
+        config := MxConfig.FindFile (MxConfig.TARGET());
+        IF (config = NIL) THEN
+          Msg.FatalError (NIL, "unable to locate configuration file, \"",
+                          MxConfig.Filename, "\"", " or ", MxConfig.HOST());
+        END;
 
         (* Even if the config file overrides the defaults, such as to do
            a cross build, the host characteristics are still available. *)

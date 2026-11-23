@@ -13,10 +13,10 @@ VAR
   mach   : Quake.Machine := NIL;
   trace  : BOOLEAN       := FALSE;
 
-PROCEDURE FindFile (): TEXT =
+PROCEDURE FindFile (filename: TEXT): TEXT =
   BEGIN
     IF NOT found THEN
-      LOCK mu DO FindConfig (); END;
+      LOCK mu DO FindConfig (filename); END;
     END;
     RETURN config;
   END FindFile;
@@ -43,7 +43,7 @@ PROCEDURE EnableQuakeTrace() =
 
 (*----------------------------------------------------------- internal ---*)
 
-PROCEDURE FindConfig () =
+PROCEDURE FindConfig1 (Filename: TEXT) =
   (* LL = mu *)
   VAR txt: TEXT;
   BEGIN
@@ -65,10 +65,12 @@ PROCEDURE FindConfig () =
       IF TryConfig (txt, Filename) THEN RETURN END;
     END;
 
-    (* try the directory containing the current executable *)
+    (* try the directory containing the current executable, and +config *)
+    (* The historical norm is txt/cm3.cfg, new norm is txt/config/target *)
     txt := Pathname.Prefix (Params.Get (0));
     IF Text.Length (txt) > 0 THEN
       IF TryConfig (txt, Filename) THEN RETURN END;
+      IF TryConfig (txt, "config", Filename) THEN RETURN END;
     END;
 
     (* try the directories named by the PATH environment variable. *)
@@ -90,6 +92,14 @@ PROCEDURE FindConfig () =
     (* oh well, make sure we don't try this silly exercise again... *)
     config := NIL;
     found := TRUE;
+  END FindConfig1;
+
+PROCEDURE FindConfig (filename: TEXT := NIL) =
+  BEGIN
+    IF (found) THEN RETURN END;
+    FindConfig1 (Filename);
+    IF (found OR filename = NIL) THEN RETURN END;
+    FindConfig1 (filename);
   END FindConfig;
 
 PROCEDURE FindConfigInPath (txt: TEXT) =

@@ -13,7 +13,9 @@ PROCEDURE HOST() : TEXT;
 PROCEDURE HOST_OS_TYPE() : OS_TYPE;
 PROCEDURE HOST_OS_TYPE_TEXT() : TEXT;
 
-PROCEDURE FindFile (): TEXT;
+(* Filename is the SECOND option to look for, after the historical builtin "cm3.cfg".
+ * It can be e.g. TARGET and cm3.cfg need not exist. *)
+PROCEDURE FindFile (filename:TEXT := NIL): TEXT;
 (* Returns a path to the current configuration file.  If no
    configuration file is found, "NIL" is returned. *)
 
